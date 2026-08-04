@@ -49,5 +49,10 @@ class Dosen extends Model
     {
         return $this->hasMany(Sk::class);
     }
-    
+
+    public function jadwal()
+    {
+        return $this->hasMany(Jadwal::class);
+    }
+
 }

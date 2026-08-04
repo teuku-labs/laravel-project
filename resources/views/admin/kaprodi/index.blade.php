@@ -30,7 +30,7 @@
                 <td>{{ $kaprodis->firstItem() + $i }}</td>
                 <td><strong>{{ $k->nama }}</strong></td>
                 <td>{{ $k->nuptk }}</td>
-                <td>{{ $k->prodi->nama ?? '-' }}</td>
+                <td>{{ $k->prodi->nama_prodi ?? $k->prodi->nama ?? '-' }}</td>
                 <td>{{ $k->user->email ?? '-' }}</td>
                 <td>
                     <a href="{{ route('admin.kaprodi.edit', $k->id) }}" class="action-btn edit" title="Edit"><i class="fas fa-edit"></i></a>

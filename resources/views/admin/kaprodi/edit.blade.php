@@ -29,9 +29,11 @@
             <div>
                 <label style="font-size:.85rem;font-weight:500;margin-bottom:.4rem;display:block;">Program Studi <span style="color:red">*</span></label>
                 <select name="prodi_id" class="form-select" required>
-                    <option value="">-- Pilih Prodi --</option>
-                    @foreach($prodis as $p)
-                    <option value="{{ $p->id }}" {{ old('prodi_id', $kaprodi->prodi_id) == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>
+                    <option value="">-- Pilih Program Studi --</option>
+                    @foreach($prodis as $prodi)
+                        <option value="{{ $prodi->id }}" {{ old('prodi_id', $kaprodi->prodi_id) == $prodi->id ? 'selected' : '' }}>
+                            {{ $prodi->nama_prodi }}
+                        </option>
                     @endforeach
                 </select>
             </div>

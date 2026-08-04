@@ -73,4 +73,10 @@ class Mahasiswa extends Model
     {
         return $this->hasOne(Sidang::class);
     }
+
+    // BARU
+    public function jadwal()
+    {
+        return $this->hasMany(Jadwal::class);
+    }
 }
