@@ -6,6 +6,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\PengajuanSk;
 
 class Mahasiswa extends Model
 {
@@ -72,6 +73,11 @@ class Mahasiswa extends Model
     public function sidang()
     {
         return $this->hasOne(Sidang::class);
+    }
+
+    public function pengajuanSk()
+    {
+        return $this->hasOne(PengajuanSk::class);
     }
 
     // BARU

@@ -77,6 +77,7 @@
                             <td>{{ $i+1 }}</td>
                             <td><strong>{{ $j->mahasiswa->nama ?? '-' }}</strong></td>
                             <td>{{ $j->mahasiswa->nim ?? '-' }}</td>
+                            <td>{{ $j->mahasiswa->prodi->nama ?? '-' }}</td>
                             <td>{{ $j->dosen->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($j->tanggal)->format('d M Y') }}</td>
                             <td>{{ $j->waktu ?? '-' }}</td>

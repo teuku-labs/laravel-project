@@ -106,6 +106,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/lkp/daftar',                [SeminarLkpController::class, 'store'])->name('lkp.daftar');
         Route::post('/proposal/daftar', [ProposalController::class, 'store'])->name('proposal.daftar');
         Route::post('/sidang/daftar',   [SidangController::class, 'store'])->name('sidang.daftar');
+        Route::post('/sk/ajukan', [MahasiswaController::class, 'ajukanSk'])->name('sk.ajukan');
 
         // Profile & Settings mahasiswa
         Route::get('/mahasiswa/profile',            [MahasiswaController::class, 'profile'])->name('mahasiswa.profile');
@@ -123,6 +124,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/mahasiswa', [DosenController::class, 'mahasiswa'])->name('mahasiswa');
         Route::get('/sk',        [DosenController::class, 'sk'])->name('sk');
         Route::get('/profile',   [DosenController::class, 'profile'])->name('profile');
+        Route::post('/bimbingan/{id}/approve', [DosenController::class, 'approveBimbingan'])->name('bimbingan.approve');
+        Route::post('/bimbingan/{id}/reject',  [DosenController::class, 'rejectBimbingan'])->name('bimbingan.reject');
     });
 
     /*
@@ -162,3 +165,4 @@ Route::middleware('auth')->group(function () {
         Route::get('/profile',   [DekanController::class, 'profile'])->name('profile');
     });
 });
+
