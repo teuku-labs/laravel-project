@@ -33,17 +33,7 @@
     </style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header"><a href="#" class="sidebar-brand"><i class="fas fa-user-tie"></i><span>Kaprodi Panel</span></a></div>
-    <nav class="sidebar-menu">
-        <div class="menu-cat">Menu Utama</div>
-        <a href="{{ route('kaprodi.dashboard') }}" class="menu-item"><i class="fas fa-home"></i>Dashboard</a>
-        <a href="{{ route('kaprodi.seminar') }}" class="menu-item"><i class="fas fa-clipboard-list"></i>Seminar LKP</a>
-        <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
-        <a href="{{ route('kaprodi.profile') }}" class="menu-item active"><i class="fas fa-user"></i>Profil Saya</a>
-        <form action="{{ route('logout') }}" method="POST">@csrf<button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i>Logout</button></form>
-    </nav>
-</aside>
+@include('kaprodi.partials.sidebar')
 <div class="main">
     <nav class="topbar">
         <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="color:var(--muted);font-size:.9rem;">Profil Saya</span></div>
@@ -55,7 +45,13 @@
             <div class="profile-role"><i class="fas fa-user-tie"></i> Ketua Program Studi</div>
             <div class="info-row"><div class="info-icon"><i class="fas fa-id-card"></i></div><div><div class="info-label">NUPTK</div><div class="info-value">{{ $kaprodi->nuptk ?? '-' }}</div></div></div>
             <div class="info-row"><div class="info-icon"><i class="fas fa-envelope"></i></div><div><div class="info-label">Email</div><div class="info-value">{{ $kaprodi->user->email ?? '-' }}</div></div></div>
-            <div class="info-row"><div class="info-icon"><i class="fas fa-book"></i></div><div><div class="info-label">Program Studi</div><div class="info-value">{{ $kaprodi->prodi->nama ?? '-' }}</div></div></div>
+            <div class="info-row">
+                <div class="info-icon"><i class="fas fa-book"></i></div>
+                <div>
+                    <div class="info-label">Program Studi</div>
+                    <div class="info-value">{{ $kaprodi->prodi?->nama ?? '-' }}</div>
+                </div>
+            </div>            
             <div class="info-row"><div class="info-icon"><i class="fas fa-calendar"></i></div><div><div class="info-label">Terdaftar Sejak</div><div class="info-value">{{ \Carbon\Carbon::parse($kaprodi->created_at)->format('d M Y') }}</div></div></div>
         </div>
     </div>

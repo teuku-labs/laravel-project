@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seminar LKP - Dekan</title>
+    <title>Profil Saya - Dekan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -19,79 +19,61 @@
         .main{margin-left:var(--sidebar);min-height:100vh;}
         .topbar{background:white;box-shadow:0 2px 15px rgba(0,0,0,.05);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:999;}
         .toggle-btn{background:none;border:none;font-size:1.3rem;color:var(--text);cursor:pointer;}
-        .avatar{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--dark));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;}
         .content{padding:2rem;}
-        .table-card{background:white;border-radius:16px;padding:1.5rem;box-shadow:0 5px 20px rgba(0,0,0,.05);}
-        .table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;}
-        .search-box{position:relative;min-width:250px;}
-        .search-box input{padding:.7rem 1rem .7rem 2.4rem;border:2px solid #eee;border-radius:10px;width:100%;font-family:'Poppins',sans-serif;font-size:.88rem;}
-        .search-box input:focus{border-color:var(--primary);outline:none;}
-        .search-box i{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--muted);}
-        .custom-table{width:100%;border-collapse:collapse;}
-        .custom-table thead th{background:var(--light);color:var(--dark);font-weight:600;font-size:.83rem;padding:.85rem 1rem;text-align:left;}
-        .custom-table tbody td{padding:.85rem 1rem;border-bottom:1px solid #eee;font-size:.88rem;}
-        .custom-table tbody tr:hover{background:var(--light);}
-        .badge-pending{background:rgba(243,156,18,.15);color:#d68910;padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
-        .badge-done{background:rgba(39,174,96,.15);color:#1e8449;padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
-        .empty-state{text-align:center;padding:2.5rem;color:var(--muted);}
-        .empty-state i{font-size:3rem;color:#dee2e6;margin-bottom:.75rem;}
+        .profile-card{background:white;border-radius:16px;padding:2rem;box-shadow:0 5px 20px rgba(0,0,0,.05);max-width:560px;margin:0 auto 1.5rem;}
+        .profile-avatar{width:90px;height:90px;background:linear-gradient(135deg,var(--primary),var(--dark));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:2.2rem;font-weight:700;margin:0 auto 1rem;}
+        .profile-name{text-align:center;font-size:1.4rem;font-weight:700;margin-bottom:.2rem;}
+        .profile-role{text-align:center;color:var(--muted);font-size:.88rem;margin-bottom:1.75rem;}
+        .info-row{display:flex;align-items:center;padding:.85rem 0;border-bottom:1px solid #eee;gap:.85rem;}
+        .info-row:last-child{border-bottom:none;}
+        .info-icon{width:38px;height:38px;background:var(--light);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0;}
+        .info-label{font-size:.78rem;color:var(--muted);margin-bottom:.1rem;}
+        .info-value{font-weight:500;font-size:.9rem;}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;max-width:560px;margin:0 auto;}
+        .stat-card{background:white;border-radius:16px;padding:1.5rem;box-shadow:0 5px 20px rgba(0,0,0,.05);display:flex;align-items:center;gap:1rem;}
+        .stat-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;background:var(--light);color:var(--primary);}
+        .stat-value{font-size:1.6rem;font-weight:700;line-height:1;}.stat-label{font-size:.8rem;color:var(--muted);margin-top:.25rem;}
         @media(max-width:992px){.sidebar{transform:translateX(-100%)}.sidebar.show{transform:translateX(0)}.main{margin-left:0}}
     </style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header"><a href="#" class="sidebar-brand"><i class="fas fa-user-shield"></i><span>Dekan Panel</span></a></div>
-    <nav class="sidebar-menu">
-        <div class="menu-cat">Menu Utama</div>
-        <a href="{{ route('dekan.dashboard') }}" class="menu-item"><i class="fas fa-home"></i>Dashboard</a>
-        <a href="{{ route('dekan.seminar') }}" class="menu-item active"><i class="fas fa-file-alt"></i>Seminar LKP</a>
-        <a href="{{ route('dekan.jadwal') }}" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Seminar</a>
-        <a href="{{ route('dekan.proposal') }}" class="menu-item"><i class="fas fa-file-contract"></i>Proposal</a>
-        <a href="{{ route('dekan.sidang') }}" class="menu-item"><i class="fas fa-user-graduate"></i>Sidang</a>
-        <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
-        <a href="{{ route('dekan.profile') }}" class="menu-item"><i class="fas fa-user"></i>Profil Saya</a>
-        <form action="{{ route('logout') }}" method="POST">@csrf<button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i>Logout</button></form>
-    </nav>
-</aside>
+@include('dekan.partials.sidebar')
+
 <div class="main">
     <nav class="topbar">
-        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="color:var(--muted);font-size:.9rem;">Seminar LKP</span></div>
-        <div style="display:flex;align-items:center;gap:.75rem;"><div class="avatar">{{ substr($dekan->nama ?? 'D', 0, 1) }}</div><div><div style="font-weight:600;font-size:.9rem;">{{ $dekan->nama }}</div><div style="font-size:.75rem;color:var(--muted);">Dekan</div></div></div>
+        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="color:var(--muted);font-size:.9rem;">Profil Saya</span></div>
     </nav>
     <div class="content">
-        <div class="table-card">
-            <div class="table-header">
-                <div><strong style="font-size:1rem;">Semua Pendaftar Seminar LKP</strong><p style="color:var(--muted);font-size:.83rem;margin:0;">Total: {{ $seminarList->count() }} pendaftar</p></div>
-                <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Cari mahasiswa..."></div>
+        <div class="profile-card">
+            <div class="profile-avatar">{{ substr($dekan->nama ?? 'D', 0, 1) }}</div>
+            <div class="profile-name">{{ $dekan->nama }}</div>
+            <div class="profile-role"><i class="fas fa-user-shield"></i> Dekan</div>
+            <div class="info-row"><div class="info-icon"><i class="fas fa-id-card"></i></div><div><div class="info-label">NUPTK</div><div class="info-value">{{ $dekan->nuptk ?? '-' }}</div></div></div>
+            <div class="info-row"><div class="info-icon"><i class="fas fa-envelope"></i></div><div><div class="info-label">Email</div><div class="info-value">{{ $dekan->user->email ?? '-' }}</div></div></div>
+            <div class="info-row">
+                <div class="info-icon"><i class="fas fa-book"></i></div>
+                <div>
+                    <div class="info-label">Program Studi</div>
+                    <div class="info-value">{{ $dekan->prodi?->nama ?? '-' }}</div>
+                </div>
             </div>
-            <div class="table-responsive">
-                <table class="custom-table" id="seminarTable">
-                    <thead><tr><th>No</th><th>Nama</th><th>NIM</th><th>Prodi</th><th>Judul LKP</th><th>Pembimbing</th><th>Tanggal Daftar</th><th>Status</th></tr></thead>
-                    <tbody>
-                        @forelse($seminarList as $i => $s)
-                        <tr>
-                            <td>{{ $i+1 }}</td>
-                            <td><strong>{{ $s->mahasiswa->nama ?? '-' }}</strong></td>
-                            <td>{{ $s->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $s->mahasiswa->prodi->nama ?? '-' }}</td>
-                            <td>{{ Str::limit($s->judul_lkp, 35) }}</td>
-                            <td>{{ $s->dosen->nama ?? '-' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($s->created_at)->format('d M Y') }}</td>
-                            <td>@if($s->tanggal_seminar)<span class="badge-done"><i class="fas fa-check"></i> Terjadwal</span>@else<span class="badge-pending"><i class="fas fa-clock"></i> Menunggu</span>@endif</td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="8"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada pendaftaran seminar LKP.</p></div></td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="info-row"><div class="info-icon"><i class="fas fa-calendar"></i></div><div><div class="info-label">Terdaftar Sejak</div><div class="info-value">{{ \Carbon\Carbon::parse($dekan->created_at)->format('d M Y') }}</div></div></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+                <div><div class="stat-value">{{ $mahasiswaBimbingan }}</div><div class="stat-label">Mahasiswa Bimbingan</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div><div class="stat-value">{{ $pengajuanBaru }}</div><div class="stat-label">Pengajuan Baru</div></div>
             </div>
         </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    document.getElementById('sidebarToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('show'));
-    document.getElementById('searchInput').addEventListener('input',function(){const q=this.value.toLowerCase();document.querySelectorAll('#seminarTable tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';});});
-</script>
+<script>document.getElementById('sidebarToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('show'));</script>
 </body>
 </html>

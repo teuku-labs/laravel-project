@@ -148,6 +148,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/sidang/{id}/approve',  [KaprodiController::class, 'sidangApprove'])->name('sidang.approve');
         Route::post('/sidang/{id}/reject',   [KaprodiController::class, 'sidangReject'])->name('sidang.reject');
 
+        Route::get('/bimbingan',                [KaprodiController::class, 'bimbinganIndex'])->name('bimbingan.index');
+        Route::post('/bimbingan/{id}/approve',  [KaprodiController::class, 'bimbinganApprove'])->name('bimbingan.approve');
+        Route::post('/bimbingan/{id}/reject',   [KaprodiController::class, 'bimbinganReject'])->name('bimbingan.reject');
+        Route::get('/jadwal-saya',              [KaprodiController::class, 'jadwalSaya'])->name('jadwal-saya');
+
         Route::get('/profile',              [KaprodiController::class, 'profile'])->name('profile');
     });
 
@@ -163,6 +168,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/proposal',  [DekanController::class, 'proposal'])->name('proposal');
         Route::get('/sidang',    [DekanController::class, 'sidang'])->name('sidang');
         Route::get('/profile',   [DekanController::class, 'profile'])->name('profile');
+
+        Route::get('/bimbingan',                [DekanController::class, 'bimbinganIndex'])->name('bimbingan.index');
+        Route::post('/bimbingan/{id}/approve',  [DekanController::class, 'bimbinganApprove'])->name('bimbingan.approve');
+        Route::post('/bimbingan/{id}/reject',   [DekanController::class, 'bimbinganReject'])->name('bimbingan.reject');
+        Route::get('/jadwal-saya',              [DekanController::class, 'jadwalSaya'])->name('jadwal-saya');
     });
 });
 

@@ -44,20 +44,7 @@
     </style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header"><a href="#" class="sidebar-brand"><i class="fas fa-user-shield"></i><span>Dekan Panel</span></a></div>
-    <nav class="sidebar-menu">
-        <div class="menu-cat">Menu Utama</div>
-        <a href="{{ route('dekan.dashboard') }}" class="menu-item"><i class="fas fa-home"></i>Dashboard</a>
-        <a href="{{ route('dekan.seminar') }}" class="menu-item"><i class="fas fa-file-alt"></i>Seminar LKP</a>
-        <a href="{{ route('dekan.jadwal') }}" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Seminar</a>
-        <a href="{{ route('dekan.proposal') }}" class="menu-item active"><i class="fas fa-file-contract"></i>Proposal Skripsi</a>
-        <a href="{{ route('dekan.sidang') }}" class="menu-item"><i class="fas fa-gavel"></i>Sidang Skripsi</a>
-        <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
-        <a href="{{ route('dekan.profile') }}" class="menu-item"><i class="fas fa-user"></i>Profil Saya</a>
-        <form action="{{ route('logout') }}" method="POST">@csrf<button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i>Logout</button></form>
-    </nav>
-</aside>
+@include('dekan.partials.sidebar')
 
 <div class="main">
     <nav class="topbar">
