@@ -115,7 +115,7 @@
                         </div>
                     </td>
                     <td><code>{{ $dosen->nuptk ?? '-' }}</code></td>
-                    <td>{{ $dosen->prodi->nama_prodi ?? $dosen->prodi->nama ?? '-' }}</td>
+                    <td>{{ $dosen->prodi->nama_prodi ?? $dosen->prodi->nama_prodi ?? '-' }}</td>
                     <td style="font-size:.82rem;">{{ $dosen->user->email ?? '-' }}</td>
                     <td>
                         <span style="background:var(--light-green);color:var(--dark-green);padding:.3rem .75rem;border-radius:20px;font-size:.78rem;font-weight:500;">

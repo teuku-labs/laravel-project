@@ -14,7 +14,7 @@
                 <td>{{ $dekans->firstItem() + $i }}</td>
                 <td><strong>{{ $d->nama }}</strong></td>
                 <td>{{ $d->nuptk }}</td>
-                <td>{{ $d->prodi->nama_prodi ?? $d->prodi->nama ?? '-' }}</td>
+                <td>{{ $d->prodi->nama_prodi ?? $d->prodi->nama_prodi ?? '-' }}</td>
                 <td>{{ $d->user->email ?? '-' }}</td>
                 <td>
                     <a href="{{ route('admin.dekan.edit', $d->id) }}" class="action-btn edit"><i class="fas fa-edit"></i></a>

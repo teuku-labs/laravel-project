@@ -96,7 +96,7 @@
                 {{ substr($dosen->nama, 0, 1) }}
             </div>
             <div style="font-weight:600;font-size:1rem;">{{ $dosen->nama }}</div>
-            <div style="font-size:.82rem;color:var(--text-muted);">{{ $dosen->prodi->nama_prodi ?? $dosen->prodi->nama ?? '-' }}</div>
+            <div style="font-size:.82rem;color:var(--text-muted);">{{ $dosen->prodi->nama_prodi ?? $dosen->prodi->nama_prodi ?? '-' }}</div>
         </div>
         <div style="font-size:.85rem;">
             <div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #eee;">

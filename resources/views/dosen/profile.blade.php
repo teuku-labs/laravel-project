@@ -85,7 +85,7 @@
                     <div class="info-icon"><i class="fas fa-book"></i></div>
                     <div>
                         <div class="info-label">Program Studi</div>
-                        <div class="info-value">{{ $dosen->prodi->nama ?? '-' }}</div>
+                        <div class="info-value">{{ $dosen->prodi->nama_prodi ?? '-' }}</div>
                     </div>
                 </div>
                 <div class="info-row">

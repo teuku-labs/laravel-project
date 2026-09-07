@@ -16,7 +16,7 @@
         @endforeach
         <div style="display:flex;padding:.75rem 0;border-bottom:1px solid #eee;gap:.75rem;">
             <span style="font-size:.82rem;color:var(--text-muted);min-width:130px;">Program Studi</span>
-            <span style="font-weight:500;font-size:.9rem;">{{ $mahasiswa->prodi->nama ?? '-' }}</span>
+            <span style="font-weight:500;font-size:.9rem;">{{ $mahasiswa->prodi->nama_prodi ?? '-' }}</span>
         </div>
         <div style="display:flex;padding:.75rem 0;border-bottom:1px solid #eee;gap:.75rem;">
             <span style="font-size:.82rem;color:var(--text-muted);min-width:130px;">Email</span>

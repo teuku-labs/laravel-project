@@ -550,8 +550,7 @@
             .student-info-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
-</head>ody>
-
+</head>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid px-0">

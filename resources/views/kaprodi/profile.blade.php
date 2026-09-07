@@ -49,7 +49,7 @@
                 <div class="info-icon"><i class="fas fa-book"></i></div>
                 <div>
                     <div class="info-label">Program Studi</div>
-                    <div class="info-value">{{ $kaprodi->prodi?->nama ?? '-' }}</div>
+                    <div class="info-value">{{ $kaprodi->prodi?->nama_prodi ?? '-' }}</div>
                 </div>
             </div>            
             <div class="info-row"><div class="info-icon"><i class="fas fa-calendar"></i></div><div><div class="info-label">Terdaftar Sejak</div><div class="info-value">{{ \Carbon\Carbon::parse($kaprodi->created_at)->format('d M Y') }}</div></div></div>

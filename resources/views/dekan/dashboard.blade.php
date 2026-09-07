@@ -57,14 +57,14 @@
             <div class="table-title"><i class="fas fa-calendar" style="color:var(--primary)"></i> Jadwal Seminar Terdekat</div>
             <div class="table-responsive">
                 <table class="custom-table">
-                    <thead><tr><th>No</th><th>Mahasiswa</th><th>NIM</th><th>Dosen</th><th>Tanggal</th><th>Waktu</th><th>Ruang</th><th>Status</th></tr></thead>
+                    <thead><tr><th>No</th><th>Mahasiswa</th><th>NIM</th><th>Prodi</th><th>Dosen</th><th>Tanggal</th><th>Waktu</th><th>Ruang</th><th>Status</th></tr></thead>
                     <tbody>
                         @forelse($jadwalTerbaru as $i => $j)
                         <tr>
                             <td>{{ $i+1 }}</td>
                             <td><strong>{{ $j->mahasiswa->nama ?? '-' }}</strong></td>
                             <td>{{ $j->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $j->mahasiswa->prodi->nama ?? '-' }}</td>
+                            <td>{{ $j->mahasiswa->prodi->nama_prodi ?? '-' }}</td>
                             <td>{{ $j->dosen->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($j->tanggal)->format('d M Y') }}</td>
                             <td>{{ $j->waktu ?? '-' }}</td>
@@ -72,7 +72,7 @@
                             <td>@if(\Carbon\Carbon::parse($j->tanggal)->isFuture())<span class="badge-up"><i class="fas fa-clock"></i> Akan Datang</span>@else<span class="badge-done"><i class="fas fa-check"></i> Selesai</span>@endif</td>
                         </tr>
                         @empty
-                        <tr><td colspan="8"><div class="empty-state"><i class="fas fa-calendar-times"></i><p>Belum ada jadwal seminar.</p></div></td></tr>
+                        <tr><td colspan="9"><div class="empty-state"><i class="fas fa-calendar-times"></i><p>Belum ada jadwal seminar.</p></div></td></tr>
                         @endforelse
                     </tbody>
                 </table>

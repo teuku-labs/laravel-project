@@ -64,7 +64,7 @@
                 <h5><i class="fas fa-user-graduate"></i> Data Mahasiswa</h5>
                 <div class="info-row"><span class="info-label">Nama</span><span class="info-value">{{ $sidang->mahasiswa->nama ?? '-' }}</span></div>
                 <div class="info-row"><span class="info-label">NIM</span><span class="info-value">{{ $sidang->mahasiswa->nim ?? '-' }}</span></div>
-                <div class="info-row"><span class="info-label">Program Studi</span><span class="info-value">{{ $sidang->mahasiswa->prodi->nama ?? '-' }}</span></div>
+                <div class="info-row"><span class="info-label">Program Studi</span><span class="info-value">{{ $sidang->mahasiswa->prodi->nama_prodi ?? '-' }}</span></div>
                 <div class="info-row"><span class="info-label">Pembimbing</span><span class="info-value">{{ $sidang->pembimbing->nama ?? '-' }}</span></div>
 
                 <h5 style="margin-top:1.75rem;"><i class="fas fa-gavel"></i> Data Sidang</h5>

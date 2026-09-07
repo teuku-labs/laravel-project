@@ -26,7 +26,7 @@
         </div>
         <h5 style="font-weight:700;margin-bottom:.25rem;">{{ $dosen->nama }}</h5>
         <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:1.5rem;">
-            {{ $dosen->prodi->nama_prodi ?? $dosen->prodi->nama ?? 'Dosen' }}
+            {{ $dosen->prodi->nama_prodi ?? $dosen->prodi->nama_prodi ?? 'Dosen' }}
         </p>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
@@ -65,7 +65,7 @@
                 @foreach([
                     ['Nama Lengkap', $dosen->nama],
                     ['NUPTK', $dosen->nuptk ?? '-'],
-                    ['Program Studi', $dosen->prodi->nama_prodi ?? $dosen->prodi->nama ?? '-'],
+                    ['Program Studi', $dosen->prodi->nama_prodi ?? $dosen->prodi->nama_prodi ?? '-'],
                     ['Email', $dosen->user->email ?? '-'],
                     ['Login Username', $dosen->user->nim_nuptk ?? '-'],
                     ['Terdaftar', \Carbon\Carbon::parse($dosen->created_at)->format('d M Y')],
@@ -95,7 +95,7 @@
                         <tr>
                             <td><strong>{{ $m->nama }}</strong></td>
                             <td>{{ $m->nim }}</td>
-                            <td>{{ $m->prodi->nama_prodi ?? $m->prodi->nama ?? '-' }}</td>
+                            <td>{{ $m->prodi->nama_prodi ?? $m->prodi->nama_prodi ?? '-' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -121,7 +121,7 @@
                         <tr>
                             <td><strong>{{ $m->nama }}</strong></td>
                             <td>{{ $m->nim }}</td>
-                            <td>{{ $m->prodi->nama_prodi ?? $m->prodi->nama ?? '-' }}</td>
+                            <td>{{ $m->prodi->nama_prodi ?? $m->prodi->nama_prodi ?? '-' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

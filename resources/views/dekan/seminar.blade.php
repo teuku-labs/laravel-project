@@ -60,7 +60,7 @@
                             <td>{{ $i+1 }}</td>
                             <td><strong>{{ $s->mahasiswa->nama ?? '-' }}</strong></td>
                             <td>{{ $s->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $s->mahasiswa->prodi->nama ?? '-' }}</td>
+                            <td>{{ $s->mahasiswa->prodi->nama_prodi ?? '-' }}</td>
                             <td>{{ Str::limit($s->judul_lkp, 35) }}</td>
                             <td>{{ $s->dosen->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($s->created_at)->format('d M Y') }}</td>

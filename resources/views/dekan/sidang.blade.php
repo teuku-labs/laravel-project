@@ -77,7 +77,7 @@
                             <td>{{ $i+1 }}</td>
                             <td><strong>{{ $s->mahasiswa->nama ?? '-' }}</strong></td>
                             <td>{{ $s->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $s->mahasiswa->prodi->nama ?? '-' }}</td>
+                            <td>{{ $s->mahasiswa->prodi->nama_prodi ?? '-' }}</td>
                             <td>{{ Str::limit($s->judul_skripsi, 35) }}</td>
                             <td>{{ $s->pembimbing->nama ?? '-' }}</td>
                             <td style="display:flex;gap:.5rem;flex-wrap:wrap;">

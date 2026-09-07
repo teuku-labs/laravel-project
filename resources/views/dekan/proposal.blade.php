@@ -75,7 +75,7 @@
                             <td>{{ $i+1 }}</td>
                             <td><strong>{{ $p->mahasiswa->nama ?? '-' }}</strong></td>
                             <td>{{ $p->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $p->mahasiswa->prodi->nama ?? '-' }}</td>
+                            <td>{{ $p->mahasiswa->prodi->nama_prodi ?? '-' }}</td>
                             <td>{{ Str::limit($p->judul, 40) }}</td>
                             <td>{{ $p->pembimbing1->nama ?? '-' }}</td>
                             <td><a href="{{ asset('storage/'.$p->file_proposal) }}" target="_blank" class="btn-file"><i class="fas fa-file-pdf"></i> Lihat</a></td>

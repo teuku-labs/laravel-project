@@ -122,8 +122,7 @@
             <tr>
                 <td><strong>{{ $m->nama }}</strong></td>
                 <td>{{ $m->nim }}</td>
-                <td>{{ $m->prodi->nama_prodi ?? $m->prodi->nama ?? '-' }}</td>
-                <td>{{ $m->pembimbing1->user->email ?? '-' }}</td>
+                <td>{{ $m->prodi->nama_prodi ?? '-' }}</td>
                 <td>{{ $m->pembimbing1->nama ?? '<span style="color:#aaa">Belum dipilih</span>' }}</td>
                 <td>{{ \Carbon\Carbon::parse($m->created_at)->format('d M Y') }}</td>
                 <td>

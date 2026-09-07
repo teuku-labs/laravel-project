@@ -13,7 +13,7 @@
             <select name="prodi_id" class="form-select" style="width:180px;">
                 <option value="">Semua Prodi</option>
                 @foreach($prodis as $p)
-                <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>
+                <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama_prodi }}</option>
                 @endforeach
             </select>
             <button type="submit" style="background:var(--primary-green);color:white;border:none;padding:.5rem 1rem;border-radius:8px;cursor:pointer;"><i class="fas fa-search"></i></button>
@@ -31,7 +31,7 @@
                     <td>{{ $mahasiswas->firstItem() + $i }}</td>
                     <td><strong>{{ $m->nama }}</strong></td>
                     <td>{{ $m->nim }}</td>
-                    <td>{{ $m->prodi->nama ?? '-' }}</td>
+                    <td>{{ $m->prodi->nama_prodi ?? '-' }}</td>
                     <td>{{ $m->pembimbing1->nama ?? '<span style="color:#aaa;font-size:.8rem;">Belum dipilih</span>' }}</td>
                     <td>
                         @if($m->seminarLkp)

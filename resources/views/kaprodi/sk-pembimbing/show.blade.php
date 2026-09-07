@@ -62,7 +62,7 @@
                 <h5><i class="fas fa-user-graduate"></i> Data Mahasiswa</h5>
                 <div class="info-row"><span class="info-label">Nama</span><span class="info-value">{{ $pengajuan->mahasiswa->nama ?? '-' }}</span></div>
                 <div class="info-row"><span class="info-label">NIM</span><span class="info-value">{{ $pengajuan->mahasiswa->nim ?? '-' }}</span></div>
-                <div class="info-row"><span class="info-label">Program Studi</span><span class="info-value">{{ $pengajuan->mahasiswa->prodi->nama ?? '-' }}</span></div>
+                <div class="info-row"><span class="info-label">Program Studi</span><span class="info-value">{{ $pengajuan->mahasiswa->prodi->nama_prodi ?? '-' }}</span></div>
                 <div class="info-row"><span class="info-label">Pembimbing 1</span><span class="info-value">{{ $pengajuan->pembimbing1->nama ?? '-' }}</span></div>
                 <div class="info-row"><span class="info-label">Pembimbing 2</span><span class="info-value">{{ $pengajuan->pembimbing2->nama ?? '-' }}</span></div>
                 <div class="info-row"><span class="info-label">Nomor SK</span><span class="info-value"><code>{{ $pengajuan->nomor_sk ?? 'Belum ada nomor' }}</code></span></div>

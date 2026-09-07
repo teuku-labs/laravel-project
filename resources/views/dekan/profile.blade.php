@@ -54,7 +54,7 @@
                 <div class="info-icon"><i class="fas fa-book"></i></div>
                 <div>
                     <div class="info-label">Program Studi</div>
-                    <div class="info-value">{{ $dekan->prodi?->nama ?? '-' }}</div>
+                    <div class="info-value">{{ $dekan->prodi?->nama_prodi ?? '-' }}</div>
                 </div>
             </div>
             <div class="info-row"><div class="info-icon"><i class="fas fa-calendar"></i></div><div><div class="info-label">Terdaftar Sejak</div><div class="info-value">{{ \Carbon\Carbon::parse($dekan->created_at)->format('d M Y') }}</div></div></div>

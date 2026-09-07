@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil - Kaprodi</title>
+    <title>Dashboard Kaprodi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -19,16 +19,22 @@
         .main{margin-left:var(--sidebar);min-height:100vh;}
         .topbar{background:white;box-shadow:0 2px 15px rgba(0,0,0,.05);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:999;}
         .toggle-btn{background:none;border:none;font-size:1.3rem;color:var(--text);cursor:pointer;}
+        .avatar{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--dark));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;}
         .content{padding:2rem;}
-        .profile-card{background:white;border-radius:16px;padding:2rem;box-shadow:0 5px 20px rgba(0,0,0,.05);max-width:560px;margin:0 auto;}
-        .profile-avatar{width:90px;height:90px;background:linear-gradient(135deg,var(--primary),var(--dark));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:2.2rem;font-weight:700;margin:0 auto 1rem;}
-        .profile-name{text-align:center;font-size:1.4rem;font-weight:700;margin-bottom:.2rem;}
-        .profile-role{text-align:center;color:var(--muted);font-size:.88rem;margin-bottom:1.75rem;}
-        .info-row{display:flex;align-items:center;padding:.85rem 0;border-bottom:1px solid #eee;gap:.85rem;}
-        .info-row:last-child{border-bottom:none;}
-        .info-icon{width:38px;height:38px;background:var(--light);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0;}
-        .info-label{font-size:.78rem;color:var(--muted);margin-bottom:.1rem;}
-        .info-value{font-weight:500;font-size:.9rem;}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-bottom:2rem;}
+        .stat-card{background:white;border-radius:16px;padding:1.5rem;box-shadow:0 5px 20px rgba(0,0,0,.05);display:flex;align-items:center;gap:1rem;}
+        .stat-icon{width:55px;height:55px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+        .stat-value{font-size:1.8rem;font-weight:700;line-height:1;}.stat-label{font-size:.82rem;color:var(--muted);margin-top:.25rem;}
+        .table-card{background:white;border-radius:16px;padding:1.5rem;box-shadow:0 5px 20px rgba(0,0,0,.05);margin-bottom:1.5rem;}
+        .table-title{font-weight:600;margin-bottom:1.25rem;}
+        .custom-table{width:100%;border-collapse:collapse;}
+        .custom-table thead th{background:var(--light);color:var(--dark);font-weight:600;font-size:.83rem;padding:.85rem 1rem;text-align:left;}
+        .custom-table tbody td{padding:.85rem 1rem;border-bottom:1px solid #eee;font-size:.88rem;}
+        .custom-table tbody tr:hover{background:var(--light);}
+        .badge-up{background:rgba(52,152,219,.15);color:#2980b9;padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
+        .badge-done{background:rgba(39,174,96,.15);color:#1e8449;padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
+        .empty-state{text-align:center;padding:2.5rem;color:var(--muted);}
+        .empty-state i{font-size:3rem;color:#dee2e6;margin-bottom:.75rem;}
         @media(max-width:992px){.sidebar{transform:translateX(-100%)}.sidebar.show{transform:translateX(0)}.main{margin-left:0}}
     </style>
 </head>
@@ -36,17 +42,45 @@
 @include('kaprodi.partials.sidebar')
 <div class="main">
     <nav class="topbar">
-        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="color:var(--muted);font-size:.9rem;">Profil Saya</span></div>
+        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="color:var(--muted);font-size:.9rem;">Dashboard</span></div>
+        <div style="display:flex;align-items:center;gap:.75rem;"><div class="avatar">{{ substr($kaprodi->nama ?? 'K', 0, 1) }}</div><div><div style="font-weight:600;font-size:.9rem;">{{ $kaprodi->nama }}</div><div style="font-size:.75rem;color:var(--muted);">Kaprodi</div></div></div>
     </nav>
     <div class="content">
-        <div class="profile-card">
-            <div class="profile-avatar">{{ substr($kaprodi->nama ?? 'K', 0, 1) }}</div>
-            <div class="profile-name">{{ $kaprodi->nama }}</div>
-            <div class="profile-role"><i class="fas fa-user-tie"></i> Ketua Program Studi</div>
-            <div class="info-row"><div class="info-icon"><i class="fas fa-id-card"></i></div><div><div class="info-label">NUPTK</div><div class="info-value">{{ $kaprodi->nuptk ?? '-' }}</div></div></div>
-            <div class="info-row"><div class="info-icon"><i class="fas fa-envelope"></i></div><div><div class="info-label">Email</div><div class="info-value">{{ $kaprodi->user->email ?? '-' }}</div></div></div>
-            <div class="info-row"><div class="info-icon"><i class="fas fa-book"></i></div><div><div class="info-label">Program Studi</div><div class="info-value">{{ $kaprodi->prodi->nama ?? '-' }}</div></div></div>
-            <div class="info-row"><div class="info-icon"><i class="fas fa-calendar"></i></div><div><div class="info-label">Terdaftar Sejak</div><div class="info-value">{{ \Carbon\Carbon::parse($kaprodi->created_at)->format('d M Y') }}</div></div></div>
+        <div style="margin-bottom:2rem;"><h2 style="font-weight:700;">Dashboard Kaprodi</h2><p style="color:var(--muted);font-size:.9rem;">Pantau aktivitas seminar dan bimbingan program studi Anda.</p></div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(108,92,231,.12);color:var(--primary)"><i class="fas fa-user-graduate"></i></div><div><div class="stat-value">{{ $totalMahasiswa }}</div><div class="stat-label">Total Mahasiswa</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(39,174,96,.12);color:#27ae60"><i class="fas fa-file-alt"></i></div><div><div class="stat-value">{{ $totalSeminarLkp }}</div><div class="stat-label">Daftar Seminar LKP</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(243,156,18,.12);color:#f39c12"><i class="fas fa-clock"></i></div><div><div class="stat-value">{{ $pendingSeminarLkp }}</div><div class="stat-label">Belum Dijadwalkan</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(52,152,219,.12);color:#3498db"><i class="fas fa-calendar-alt"></i></div><div><div class="stat-value">{{ $totalJadwal }}</div><div class="stat-label">Total Jadwal</div></div></div>
+        </div>
+
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(108,92,231,.12);color:var(--primary)"><i class="fas fa-chalkboard-teacher"></i></div><div><div class="stat-value">{{ $mahasiswaBimbingan }}</div><div class="stat-label">Mahasiswa Bimbingan Saya</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(231,76,60,.12);color:#e74c3c"><i class="fas fa-bell"></i></div><div><div class="stat-value">{{ $pengajuanBimbingan->count() }}</div><div class="stat-label">Pengajuan Bimbingan Baru</div></div></div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-title"><i class="fas fa-clipboard-list" style="color:var(--primary)"></i> Seminar LKP Terbaru</div>
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead><tr><th>No</th><th>Mahasiswa</th><th>NIM</th><th>Judul LKP</th><th>Dosen Pembimbing</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @forelse($seminarList as $i => $s)
+                        <tr>
+                            <td>{{ $i+1 }}</td>
+                            <td><strong>{{ $s->mahasiswa->nama ?? '-' }}</strong></td>
+                            <td>{{ $s->mahasiswa->nim ?? '-' }}</td>
+                            <td>{{ Str::limit($s->judul_lkp, 40) }}</td>
+                            <td>{{ $s->dosen->nama ?? '-' }}</td>
+                            <td>@if($s->tanggal_seminar)<span class="badge-done"><i class="fas fa-check"></i> Terjadwal</span>@else<span class="badge-up"><i class="fas fa-clock"></i> Belum Dijadwal</span>@endif</td>
+                        </tr>
+                        @empty
+                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada pendaftaran seminar LKP.</p></div></td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

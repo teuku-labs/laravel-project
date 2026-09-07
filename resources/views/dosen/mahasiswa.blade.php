@@ -128,7 +128,7 @@
                         <div class="pengajuan-name">{{ $p->mahasiswa->nama }}</div>
                         <div class="pengajuan-detail">
                             NIM: {{ $p->mahasiswa->nim ?? '-' }} &nbsp;·&nbsp;
-                            {{ $p->mahasiswa->prodi->nama ?? '-' }}
+                            {{ $p->mahasiswa->prodi->nama_prodi ?? '-' }}
                         </div>
                         <div style="margin-top:.4rem;">
                             <span class="jenis-badge {{ $jenisRaw === 'pembimbing1' ? 'jenis-1' : 'jenis-2' }}">
@@ -183,7 +183,7 @@
                             <td>{{ $i+1 }}</td>
                             <td><strong>{{ $m->nama }}</strong></td>
                             <td>{{ $m->nim }}</td>
-                            <td>{{ $m->prodi->nama ?? '-' }}</td>
+                            <td>{{ $m->prodi->nama_prodi ?? '-' }}</td>
                             <td>
                                 @if($m->pembimbing1_id == $dosen->id)
                                     <span class="badge-p1"><i class="fas fa-star fa-xs"></i> Pembimbing 1</span>
@@ -224,7 +224,7 @@
                         <tr>
                             <td><strong>{{ $r->mahasiswa->nama ?? '-' }}</strong></td>
                             <td>{{ $r->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $r->mahasiswa->prodi->nama ?? '-' }}</td>
+                            <td>{{ $r->mahasiswa->prodi->nama_prodi ?? '-' }}</td>
                             <td>{{ $jenisRaw === 'pembimbing1' ? 'Pembimbing 1' : 'Pembimbing 2' }}</td>
                             <td>
                                 @if($r->status === 'approved')

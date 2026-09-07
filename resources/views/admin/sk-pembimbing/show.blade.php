@@ -15,7 +15,7 @@
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
     <div class="table-card">
         <h5 style="font-weight:600;color:var(--dark-green);border-bottom:2px solid var(--light-green);padding-bottom:.75rem;margin-bottom:1.25rem;"><i class="fas fa-user-graduate"></i> Data Mahasiswa</h5>
-        @foreach([['Nama',$pengajuan->mahasiswa->nama ?? '-'],['NIM',$pengajuan->mahasiswa->nim ?? '-'],['Angkatan',$pengajuan->mahasiswa->angkatan ?? '-'],['Program Studi',$pengajuan->mahasiswa->prodi->nama ?? '-']] as [$label,$val])
+        @foreach([['Nama',$pengajuan->mahasiswa->nama ?? '-'],['NIM',$pengajuan->mahasiswa->nim ?? '-'],['Angkatan',$pengajuan->mahasiswa->angkatan ?? '-'],['Program Studi',$pengajuan->mahasiswa->prodi->nama_prodi ?? '-']] as [$label,$val])
         <div style="display:flex;padding:.7rem 0;border-bottom:1px solid #eee;gap:.75rem;">
             <span style="font-size:.82rem;color:var(--text-muted);min-width:140px;">{{ $label }}</span>
             <span style="font-weight:500;font-size:.88rem;">{{ $val }}</span>
