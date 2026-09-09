@@ -29,26 +29,42 @@ class MahasiswaController extends Controller
             $mahasiswa->pembimbing2_id,
         ]);
 
+        // Data pendaftaran (dipakai view untuk menampilkan jadwal & status verifikasi)
+        $lkp      = $mahasiswa->seminarLkp;
+        $proposal = $mahasiswa->proposal;
+        $sidang   = $mahasiswa->sidang;
+
         // Status pendaftaran
         $status = [
-            'lkp'      => (bool) $mahasiswa->seminarLkp,
-            'proposal' => (bool) $mahasiswa->proposal,
-            'sidang'   => (bool) $mahasiswa->sidang,
+            'lkp'      => (bool) $lkp,
+            'proposal' => (bool) $proposal,
+            'sidang'   => (bool) $sidang,
         ];
 
         // Status pengajuan pembimbing yang sedang pending
+        // (hanya tampilkan untuk slot yang belum terisi, supaya notifikasi lama
+        //  tidak terus muncul setelah pembimbing untuk slot itu sudah didapat)
+        $slotTerisi = function ($jenis) use ($mahasiswa) {
+            return $jenis === 'pembimbing1'
+                ? (bool) $mahasiswa->pembimbing1_id
+                : (bool) $mahasiswa->pembimbing2_id;
+        };
+
         $pengajuanPending = $mahasiswa->pengajuanPembimbing
-            ->where('status', 'pending');
+            ->where('status', 'pending')
+            ->reject(fn($p) => $slotTerisi($p->catatan));
 
         $pengajuanApproved = $mahasiswa->pengajuanPembimbing
             ->where('status', 'approved');
 
         $pengajuanRejected = $mahasiswa->pengajuanPembimbing
-            ->where('status', 'rejected');
+            ->where('status', 'rejected')
+            ->reject(fn($p) => $slotTerisi($p->catatan));
 
         return view('mahasiswa', compact(
             'mahasiswa', 'dosens', 'pembimbing', 'status',
-            'pengajuanPending', 'pengajuanApproved', 'pengajuanRejected'
+            'pengajuanPending', 'pengajuanApproved', 'pengajuanRejected',
+            'lkp', 'proposal', 'sidang'
         ));
     }
 

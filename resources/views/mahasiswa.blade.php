@@ -551,6 +551,7 @@
         }
     </style>
 </head>
+<body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid px-0">
@@ -648,8 +649,76 @@
             </div>
         </div>
 
-       <!-- SECTION 1: Pemilihan Dosen Pembimbing -->
+        <!-- SECTION 1: Pemilihan Dosen Pembimbing LKP -->
         <h5 class="section-title">
+            <i class="fas fa-briefcase"></i>
+            Pemilihan Dosen Pembimbing LKP / Akademik
+        </h5>
+
+        <div class="full-width-card {{ $mahasiswa->pembimbingLkp ? 'completed' : '' }}">
+            
+            <!-- HEADER -->
+            <div class="card-header-custom">
+                <div class="card-icon {{ $mahasiswa->pembimbingLkp ? 'completed' : '' }}" 
+                    style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white;">
+                    <i class="fas fa-industry"></i>
+                </div>
+
+                <div>
+                    <div class="card-title">Pilih Dosen Pembimbing Kerja Praktik</div>
+                    <div class="card-subtitle">
+                        Pilih 1 dosen pembimbing untuk mendampingi selama kerja praktik
+                    </div>
+                </div>
+
+                <!-- STATUS -->
+                <div class="ms-auto">
+                    @if($mahasiswa->pembimbingLkp)
+                        <span class="status-badge status-completed">
+                            <i class="fas fa-check-circle"></i> Selesai
+                        </span>
+                    @else
+                        <span class="status-badge status-open">
+                            <i class="fas fa-exclamation-circle"></i> Belum Memilih
+                        </span>
+                    @endif
+                </div>
+            </div>
+            
+            <!-- SELECTED LECTURER -->
+            <div class="lecturers-container">
+                <div class="lecturer-selected" 
+                    style="{{ $mahasiswa->pembimbingLkp ? 'border-left-color: #3498db; background: #ebf5fb;' : 'background: #f8f9fa;' }}">
+                    
+                    <i class="fas {{ $mahasiswa->pembimbingLkp ? 'fa-user-check' : 'fa-user-plus' }}" 
+                    style="color: {{ $mahasiswa->pembimbingLkp ? '#3498db' : '#adb5bd' }};"></i>
+
+                    <div class="info">
+                        @if($mahasiswa->pembimbingLkp)
+                            <div class="name">{{ $mahasiswa->pembimbingLkp->nama }}</div>
+                        @else
+                            <div class="name" style="color: #adb5bd;">Belum dipilih</div>
+                        @endif
+                        <div class="status">Pembimbing LKP</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BUTTON -->
+            <div style="text-align: right;">
+                <button class="btn btn-action btn-primary-custom" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#pilihDosenLkpModal"
+                        {{ $mahasiswa->pembimbingLkp ? 'disabled' : '' }}
+                        style="width: auto; display: inline-flex; padding: 0.75rem 2rem; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+                    <i class="fas fa-user-plus"></i> 
+                    {{ $mahasiswa->pembimbingLkp ? 'Dosen LKP Lengkap' : 'Pilih Dosen LKP' }}
+                </button>
+            </div>
+
+        </div>
+       <!-- SECTION 2: Pemilihan Dosen Pembimbing -->
+        <h5 class="section-title" style="margin-top: 2rem;">
             <i class="fas fa-user-graduate"></i>
             Pemilihan Dosen Pembimbing
         </h5>
@@ -722,6 +791,27 @@
 
             </div>
 
+            <!-- STATUS PENGAJUAN PEMBIMBING -->
+            @if(($pengajuanPending ?? collect())->isNotEmpty() || ($pengajuanRejected ?? collect())->isNotEmpty())
+                <div class="mt-3">
+                    @foreach($pengajuanPending as $p)
+                        <div class="alert alert-warning py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
+                            <i class="fas fa-hourglass-half me-1"></i>
+                            Menunggu persetujuan <strong>{{ $p->dosen->nama ?? '-' }}</strong>
+                            sebagai {{ $p->catatan === 'pembimbing1' ? 'Pembimbing 1' : 'Pembimbing 2' }}
+                        </div>
+                    @endforeach
+                    @foreach($pengajuanRejected as $p)
+                        <div class="alert alert-danger py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
+                            <i class="fas fa-times-circle me-1"></i>
+                            Pengajuan ke <strong>{{ $p->dosen->nama ?? '-' }}</strong>
+                            ({{ $p->catatan === 'pembimbing1' ? 'Pembimbing 1' : 'Pembimbing 2' }}) ditolak.
+                            Silakan ajukan ke dosen lain.
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
             <!-- BUTTON -->
             <div style="text-align: right;">
                 <button class="btn btn-action btn-primary-custom" 
@@ -737,74 +827,6 @@
 
         </div>
       
-        <!-- SECTION 2: Pemilihan Dosen Pembimbing LKP -->
-        <h5 class="section-title" style="margin-top: 2rem;">
-            <i class="fas fa-briefcase"></i>
-            Pemilihan Dosen Pembimbing LKP
-        </h5>
-
-        <div class="full-width-card {{ $mahasiswa->pembimbingLkp ? 'completed' : '' }}">
-            
-            <!-- HEADER -->
-            <div class="card-header-custom">
-                <div class="card-icon {{ $mahasiswa->pembimbingLkp ? 'completed' : '' }}" 
-                    style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white;">
-                    <i class="fas fa-industry"></i>
-                </div>
-
-                <div>
-                    <div class="card-title">Pilih Dosen Pembimbing Kerja Praktik</div>
-                    <div class="card-subtitle">
-                        Pilih 1 dosen pembimbing untuk mendampingi selama kerja praktik
-                    </div>
-                </div>
-
-                <!-- STATUS -->
-                <div class="ms-auto">
-                    @if($mahasiswa->pembimbingLkp)
-                        <span class="status-badge status-completed">
-                            <i class="fas fa-check-circle"></i> Selesai
-                        </span>
-                    @else
-                        <span class="status-badge status-open">
-                            <i class="fas fa-exclamation-circle"></i> Belum Memilih
-                        </span>
-                    @endif
-                </div>
-            </div>
-            
-            <!-- SELECTED LECTURER -->
-            <div class="lecturers-container">
-                <div class="lecturer-selected" 
-                    style="{{ $mahasiswa->pembimbingLkp ? 'border-left-color: #3498db; background: #ebf5fb;' : 'background: #f8f9fa;' }}">
-                    
-                    <i class="fas {{ $mahasiswa->pembimbingLkp ? 'fa-user-check' : 'fa-user-plus' }}" 
-                    style="color: {{ $mahasiswa->pembimbingLkp ? '#3498db' : '#adb5bd' }};"></i>
-
-                    <div class="info">
-                        @if($mahasiswa->pembimbingLkp)
-                            <div class="name">{{ $mahasiswa->pembimbingLkp->nama }}</div>
-                        @else
-                            <div class="name" style="color: #adb5bd;">Belum dipilih</div>
-                        @endif
-                        <div class="status">Pembimbing LKP</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- BUTTON -->
-            <div style="text-align: right;">
-                <button class="btn btn-action btn-primary-custom" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#pilihDosenLkpModal"
-                        {{ $mahasiswa->pembimbingLkp ? 'disabled' : '' }}
-                        style="width: auto; display: inline-flex; padding: 0.75rem 2rem; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
-                    <i class="fas fa-user-plus"></i> 
-                    {{ $mahasiswa->pembimbingLkp ? 'Dosen LKP Lengkap' : 'Pilih Dosen LKP' }}
-                </button>
-            </div>
-
-        </div>
         <!-- MODAL: PILIH DOSEN LKP -->
         <div class="modal fade" id="pilihDosenLkpModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
@@ -1763,11 +1785,11 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Dosen Pembimbing 1</label>
-                            <input type="text" class="form-control" value="{{ $pembimbing[0]->nama ?? '-' }}" readonly>
+                            <input type="text" class="form-control" value="{{ $mahasiswa->pembimbing1->nama ?? '-' }}" readonly>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Dosen Pembimbing 2</label>
-                            <input type="text" class="form-control" value="{{ $pembimbing[1]->nama ?? '-' }}" readonly>
+                            <input type="text" class="form-control" value="{{ $mahasiswa->pembimbing2->nama ?? '-' }}" readonly>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Upload Skripsi Lengkap (PDF)</label>
