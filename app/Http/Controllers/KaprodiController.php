@@ -11,6 +11,7 @@ use App\Models\Jadwal;
 use App\Models\PengajuanSk;
 use App\Models\Sidang;
 use App\Models\PengajuanPembimbing;
+use App\Models\Dosen;
 
 class KaprodiController extends Controller
 {
@@ -81,11 +82,57 @@ class KaprodiController extends Controller
         $kaprodi = $this->getKaprodi();
         if (!$kaprodi) return redirect()->route('login');
 
-        $seminar = SeminarLkp::with(['mahasiswa', 'dosen'])
+        $seminar = SeminarLkp::with(['mahasiswa', 'dosen', 'penguji'])
             ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
             ->findOrFail($id);
 
-        return view('kaprodi.seminar-show', compact('kaprodi', 'seminar'));
+        $dosenList = Dosen::where('prodi_id', $kaprodi->prodi_id)->orderBy('nama')->get();
+
+        return view('kaprodi.seminar-show', compact('kaprodi', 'seminar', 'dosenList'));
+    }
+
+    public function seminarUpdatePembimbing(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $request->validate([
+            'dosen_id' => 'required|exists:dosen,id',
+        ]);
+
+        $seminar = SeminarLkp::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        // Pastikan dosen yang dipilih berasal dari prodi yang sama
+        $dosen = Dosen::where('prodi_id', $kaprodi->prodi_id)->findOrFail($request->dosen_id);
+
+        $seminar->update(['pembimbing1_id' => $dosen->id]);
+
+        return back()->with('success', 'Dosen pembimbing LKP berhasil diperbarui.');
+    }
+
+    public function seminarUpdatePenguji(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $request->validate([
+            'penguji_id' => 'required|exists:dosen,id',
+        ]);
+
+        $seminar = SeminarLkp::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        // Pastikan dosen yang dipilih berasal dari prodi yang sama
+        $dosen = Dosen::where('prodi_id', $kaprodi->prodi_id)->findOrFail($request->penguji_id);
+
+        if ($seminar->pembimbing1_id == $dosen->id) {
+            return back()->withErrors(['penguji_id' => 'Dosen pembahas/penguji tidak boleh sama dengan dosen pembimbing.']);
+        }
+
+        $seminar->update(['penguji_id' => $dosen->id]);
+
+        return back()->with('success', 'Dosen pembahas/penguji seminar LKP berhasil ditetapkan.');
     }
 
     public function seminarJadwal(Request $request, $id)

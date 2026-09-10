@@ -91,7 +91,15 @@
             <div class="card-box">
                 <h5><i class="fas fa-file-alt"></i> Data Seminar LKP</h5>
                 <div class="info-row"><span class="info-label">Judul LKP</span><span class="info-value">{{ $seminar->judul_lkp }}</span></div>
-                <div class="info-row"><span class="info-label">Dosen Pembimbing</span><span class="info-value">{{ $seminar->dosen->nama ?? '-' }}</span></div>
+                <div class="info-row">
+                    <span class="info-label">Dosen Pembimbing</span>
+                    <span class="info-value" style="display:flex;align-items:center;gap:.6rem;">
+                        {{ $seminar->dosen->nama ?? '-' }}
+                        <button type="button" class="btn btn-sm" style="color:var(--primary);padding:0;border:none;background:none;" data-bs-toggle="modal" data-bs-target="#editPembimbingModal" title="Edit Dosen Pembimbing">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                    </span>
+                </div>
                 <div class="info-row"><span class="info-label">Tanggal Daftar</span><span class="info-value">{{ \Carbon\Carbon::parse($seminar->created_at)->format('d M Y') }}</span></div>
                 <div class="info-row">
                     <span class="info-label">Laporan LKP</span>
@@ -113,6 +121,25 @@
                 </div>
             </div>
 
+            {{-- Dosen Pembahas/Penguji --}}
+            <div class="card-box" style="grid-column:1/-1;">
+                <h5><i class="fas fa-user-tie"></i> Dosen Pembahas/Penguji</h5>
+                <div class="info-row">
+                    <span class="info-label">Pembahas/Penguji</span>
+                    <span class="info-value" style="display:flex;align-items:center;gap:.6rem;">
+                        @if($seminar->penguji)
+                            {{ $seminar->penguji->nama }}
+                        @else
+                            <span style="color:#d68910;font-weight:500;"><i class="fas fa-exclamation-circle"></i> Belum ditentukan</span>
+                        @endif
+                        <button type="button" class="btn btn-sm" style="color:var(--primary);padding:0;border:none;background:none;" data-bs-toggle="modal" data-bs-target="#editPengujiModal" title="Tentukan Dosen Pembahas/Penguji">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                    </span>
+                </div>
+                <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem;margin-bottom:0;">Dosen pembahas/penguji bertugas menguji mahasiswa saat pelaksanaan seminar LKP, terpisah dari dosen pembimbing.</p>
+            </div>
+
             {{-- Form Set Jadwal --}}
             @if(!$seminar->tanggal_seminar)
             <div class="card-box" style="grid-column:1/-1;">
@@ -130,13 +157,76 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Ruang <span style="color:red">*</span></label>
-                            <input type="text" name="ruang" class="form-control" placeholder="Cth: Ruang A101" required>
+                            <select name="ruang" class="form-control" required>
+                                <option value="" disabled selected>Pilih ruang</option>
+                                <option value="Seminar Lab. Kom. 1">Seminar Lab. Kom. 1</option>
+                                <option value="Seminar Lab. Kom. 2">Seminar Lab. Kom. 2</option>
+                                <option value="Seminar Lab. Mesin">Seminar Lab. Mesin</option>
+                                <option value="Seminar Fakultas Teknik">Seminar Fakultas Teknik</option>
+                            </select>
                         </div>
                     </div>
                     <button type="submit" class="btn-jadwal mt-3"><i class="fas fa-calendar-check"></i> Tetapkan Jadwal</button>
                 </form>
             </div>
             @endif
+        </div>
+    </div>
+
+    {{-- Modal: Edit Dosen Pembimbing LKP --}}
+    <div class="modal fade" id="editPembimbingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius:16px;border:none;">
+                <form action="{{ route('kaprodi.seminar.pembimbing', $seminar->id) }}" method="POST">
+                    @csrf
+                    <div class="modal-header" style="border-bottom:2px solid var(--light);">
+                        <h5 class="modal-title" style="color:var(--primary);font-weight:600;"><i class="fas fa-user-edit"></i> Edit Dosen Pembimbing LKP</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Dosen Pembimbing <span style="color:red">*</span></label>
+                        <select name="dosen_id" class="form-control" required>
+                            <option value="" disabled {{ !$seminar->pembimbing1_id ? 'selected' : '' }}>Pilih dosen</option>
+                            @foreach($dosenList as $d)
+                                <option value="{{ $d->id }}" {{ $seminar->pembimbing1_id == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="modal-footer" style="border-top:none;">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn-jadwal" style="width:auto;margin-top:0;padding:.6rem 1.5rem;"><i class="fas fa-save"></i> Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Tentukan Dosen Pembahas/Penguji --}}
+    <div class="modal fade" id="editPengujiModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius:16px;border:none;">
+                <form action="{{ route('kaprodi.seminar.penguji', $seminar->id) }}" method="POST">
+                    @csrf
+                    <div class="modal-header" style="border-bottom:2px solid var(--light);">
+                        <h5 class="modal-title" style="color:var(--primary);font-weight:600;"><i class="fas fa-user-tie"></i> Tentukan Dosen Pembahas/Penguji</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Dosen Pembahas/Penguji <span style="color:red">*</span></label>
+                        <select name="penguji_id" class="form-control" required>
+                            <option value="" disabled {{ !$seminar->penguji_id ? 'selected' : '' }}>Pilih dosen</option>
+                            @foreach($dosenList as $d)
+                                <option value="{{ $d->id }}" {{ $seminar->penguji_id == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
+                            @endforeach
+                        </select>
+                        <small style="color:var(--muted);">Tidak boleh sama dengan dosen pembimbing.</small>
+                    </div>
+                    <div class="modal-footer" style="border-top:none;">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn-jadwal" style="width:auto;margin-top:0;padding:.6rem 1.5rem;"><i class="fas fa-save"></i> Simpan</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

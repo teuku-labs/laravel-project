@@ -17,6 +17,7 @@ class SeminarLkp extends Model
         'no_hp',
         'judul_lkp',
         'pembimbing1_id',
+        'penguji_id',
         'file_laporan',
         'bukti_transfer',
         'tanggal_seminar'
@@ -30,5 +31,10 @@ class SeminarLkp extends Model
     public function dosen()
     {
         return $this->belongsTo(Dosen::class, 'pembimbing1_id');
+    }
+
+    public function penguji()
+    {
+        return $this->belongsTo(Dosen::class, 'penguji_id');
     }
 }

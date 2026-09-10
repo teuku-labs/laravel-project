@@ -138,6 +138,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/seminar',              [KaprodiController::class, 'seminar'])->name('seminar');
         Route::get('/seminar/{id}',         [KaprodiController::class, 'seminarShow'])->name('seminar.show');
         Route::post('/seminar/{id}/jadwal', [KaprodiController::class, 'seminarJadwal'])->name('seminar.jadwal');
+        Route::post('/seminar/{id}/pembimbing', [KaprodiController::class, 'seminarUpdatePembimbing'])->name('seminar.pembimbing');
+        Route::post('/seminar/{id}/penguji', [KaprodiController::class, 'seminarUpdatePenguji'])->name('seminar.penguji');
         Route::get('/sk-pembimbing',            [KaprodiController::class, 'skPembimbingIndex'])->name('sk-pembimbing.index');
         Route::get('/sk-pembimbing/{id}',       [KaprodiController::class, 'skPembimbingShow'])->name('sk-pembimbing.show');
         Route::post('/sk-pembimbing/{id}/approve', [KaprodiController::class, 'skPembimbingApprove'])->name('sk-pembimbing.approve');
@@ -175,4 +177,3 @@ Route::middleware('auth')->group(function () {
         Route::get('/jadwal-saya',              [DekanController::class, 'jadwalSaya'])->name('jadwal-saya');
     });
 });
-
