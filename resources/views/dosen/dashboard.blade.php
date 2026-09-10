@@ -665,7 +665,7 @@
                                     <td>
                                         <strong>{{ \Carbon\Carbon::parse($jadwal->tanggal)->format('d M Y') }}</strong>
                                     </td>
-                                    <td>{{ $jadwal->waktu ?? '-' }}</td>
+                                    <td>{{ $jadwal->waktu ? $jadwal->waktu . ($jadwal->waktu_selesai ? ' - ' . $jadwal->waktu_selesai : '') : '-' }}</td>
                                     <td>
                                         <div>
                                             <strong>{{ $jadwal->mahasiswa->nama ?? '-' }}</strong><br>

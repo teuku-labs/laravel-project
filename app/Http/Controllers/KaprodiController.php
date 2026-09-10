@@ -149,14 +149,18 @@ class KaprodiController extends Controller
         $seminar = SeminarLkp::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
             ->findOrFail($id);
 
+        // Waktu selesai otomatis: 1 jam 30 menit setelah waktu mulai
+        $waktuSelesai = \Carbon\Carbon::createFromFormat('H:i', $request->waktu)->addMinutes(90)->format('H:i');
+
         Jadwal::updateOrCreate(
             ['mahasiswa_id' => $seminar->mahasiswa_id, 'jenis' => 'lkp'],
             [
-                'dosen_id' => $seminar->pembimbing1_id,
-                'tanggal'  => $request->tanggal_seminar,
-                'waktu'    => $request->waktu,
-                'ruang'    => $request->ruang,
-                'jenis'    => 'lkp',
+                'dosen_id'      => $seminar->pembimbing1_id,
+                'tanggal'       => $request->tanggal_seminar,
+                'waktu'         => $request->waktu,
+                'waktu_selesai' => $waktuSelesai,
+                'ruang'         => $request->ruang,
+                'jenis'         => 'lkp',
             ]
         );
 

@@ -16,6 +16,7 @@ class Jadwal extends Model
         'dosen_id',
         'tanggal',
         'waktu',
+        'waktu_selesai',
         'ruang',
         'jenis',
     ];

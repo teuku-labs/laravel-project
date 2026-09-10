@@ -71,7 +71,7 @@
                             <td>{{ $jadwal->mahasiswa->nama ?? '-' }}</td>
                             <td>{{ $jadwal->mahasiswa->nim ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($jadwal->tanggal)->format('d M Y') }}</td>
-                            <td>{{ $jadwal->waktu ?? '-' }}</td>
+                            <td>{{ $jadwal->waktu ? $jadwal->waktu . ($jadwal->waktu_selesai ? ' - ' . $jadwal->waktu_selesai : '') : '-' }}</td>
                             <td>{{ $jadwal->ruang ?? '-' }}</td>
                             <td><span class="badge-jenis">{{ $jadwal->jenis ?? '-' }}</span></td>
                             <td>

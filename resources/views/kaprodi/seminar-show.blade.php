@@ -40,6 +40,12 @@
         .badge-done{background:rgba(39,174,96,.15);color:#1e8449;padding:.3rem .8rem;border-radius:20px;font-size:.8rem;}
         .file-link{display:inline-flex;align-items:center;gap:.4rem;color:var(--primary);text-decoration:none;font-size:.85rem;font-weight:500;}
         .file-link:hover{color:var(--dark);}
+        .time-range{display:flex;align-items:flex-end;gap:.75rem;}
+        .time-box{flex:1;}
+        .time-box-label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:.3rem;}
+        .time-box-readonly{background:var(--light);color:var(--dark);font-weight:600;display:flex;align-items:center;}
+        .time-arrow{color:var(--primary);font-size:.9rem;padding-bottom:.75rem;}
+        @media(max-width:576px){.time-range{flex-direction:column;align-items:stretch;}.time-arrow{display:none;}}
         @media(max-width:992px){.sidebar{transform:translateX(-100%)}.sidebar.show{transform:translateX(0)}.main{margin-left:0}.detail-grid{grid-template-columns:1fr}}
     </style>
 </head>
@@ -147,15 +153,26 @@
                 <form action="{{ route('kaprodi.seminar.jadwal', $seminar->id) }}" method="POST">
                     @csrf
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label">Tanggal Seminar <span style="color:red">*</span></label>
                             <input type="date" name="tanggal_seminar" class="form-control" min="{{ date('Y-m-d', strtotime('+1 day')) }}" required>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label">Waktu <span style="color:red">*</span></label>
-                            <input type="time" name="waktu" class="form-control" required>
+                            <div class="time-range">
+                                <div class="time-box">
+                                    <span class="time-box-label">Mulai</span>
+                                    <input type="time" name="waktu" id="waktuMulai" class="form-control" required onchange="hitungWaktuSelesai()">
+                                </div>
+                                <div class="time-arrow"><i class="fas fa-arrow-right"></i></div>
+                                <div class="time-box">
+                                    <span class="time-box-label">Selesai </span>
+                                    <div class="form-control time-box-readonly" id="waktuSelesaiInfo">--:--</div>
+                                </div>
+                            </div>
+                            <small style="display:block;margin-top:.4rem;color:var(--muted);"></small>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label">Ruang <span style="color:red">*</span></label>
                             <select name="ruang" class="form-control" required>
                                 <option value="" disabled selected>Pilih ruang</option>
@@ -233,5 +250,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>document.getElementById('sidebarToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('show'));</script>
+<script>
+    function hitungWaktuSelesai(){
+        const input = document.getElementById('waktuMulai');
+        const info = document.getElementById('waktuSelesaiInfo');
+        if(!input.value){ info.textContent = '--:--'; return; }
+        const [jam, menit] = input.value.split(':').map(Number);
+        const mulai = new Date();
+        mulai.setHours(jam, menit, 0, 0);
+        mulai.setMinutes(mulai.getMinutes() + 90); // +1 jam 30 menit
+        const jj = String(mulai.getHours()).padStart(2,'0');
+        const mm = String(mulai.getMinutes()).padStart(2,'0');
+        info.textContent = jj + ':' + mm;
+    }
+</script>
 </body>
 </html>

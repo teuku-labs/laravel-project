@@ -67,7 +67,7 @@
                             <td>{{ $j->mahasiswa->prodi->nama_prodi ?? '-' }}</td>
                             <td>{{ $j->dosen->nama ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($j->tanggal)->format('d M Y') }}</td>
-                            <td>{{ $j->waktu ?? '-' }}</td>
+                            <td>{{ $j->waktu ? $j->waktu . ($j->waktu_selesai ? ' - ' . $j->waktu_selesai : '') : '-' }}</td>
                             <td>{{ $j->ruang ?? '-' }}</td>
                             <td>@if(\Carbon\Carbon::parse($j->tanggal)->isFuture())<span class="badge-up"><i class="fas fa-clock"></i> Akan Datang</span>@else<span class="badge-done"><i class="fas fa-check"></i> Selesai</span>@endif</td>
                         </tr>

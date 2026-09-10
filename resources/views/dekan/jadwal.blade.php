@@ -63,7 +63,7 @@
                             <td>{{ $j->dosen->nama ?? '-' }}</td>
                             <td><span style="text-transform:capitalize;">{{ $j->jenis }}</span></td>
                             <td>{{ \Carbon\Carbon::parse($j->tanggal)->format('d M Y') }}</td>
-                            <td>{{ $j->waktu ?? '-' }}</td>
+                            <td>{{ $j->waktu ? $j->waktu . ($j->waktu_selesai ? ' - ' . $j->waktu_selesai : '') : '-' }}</td>
                             <td>{{ $j->ruang ?? '-' }}</td>
                             <td>@if(\Carbon\Carbon::parse($j->tanggal)->isFuture())<span class="badge-up">Akan Datang</span>@else<span class="badge-done">Selesai</span>@endif</td>
                         </tr>
