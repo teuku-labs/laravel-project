@@ -78,7 +78,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'nama'     => 'required|string|max:255',
-            'nuptk'    => 'required|unique:kaprodi,nuptk',
+            'nuptk'    => 'required|unique:kaprodi,nuptk|unique:dosen,nuptk',
             'email'    => 'required|email|unique:users,email',
             'prodi_id' => 'required|exists:prodi,id',
         ], [
@@ -97,6 +97,15 @@ class AdminController extends Controller
             ]);
 
             Kaprodi::create([
+                'user_id'  => $user->id,
+                'prodi_id' => $request->prodi_id,
+                'nuptk'    => $request->nuptk,
+                'nama'     => $request->nama,
+            ]);
+
+            // FIX: agar Kaprodi juga muncul di pilihan dosen pembimbing (LKP/Proposal/Skripsi),
+            // buat baris terkait di tabel dosen. Tabel dosen tidak diubah strukturnya sama sekali.
+            Dosen::create([
                 'user_id'  => $user->id,
                 'prodi_id' => $request->prodi_id,
                 'nuptk'    => $request->nuptk,
@@ -121,7 +130,7 @@ class AdminController extends Controller
 
         $request->validate([
             'nama'     => 'required|string|max:255',
-            'nuptk'    => 'required|unique:kaprodi,nuptk,' . $id,
+            'nuptk'    => 'required|unique:kaprodi,nuptk,' . $id . '|unique:dosen,nuptk,' . $kaprodi->user_id . ',user_id',
             'prodi_id' => 'required|exists:prodi,id',
         ]);
 
@@ -135,6 +144,13 @@ class AdminController extends Controller
         $kaprodi->user->update([
             'username'  => $request->nama,
             'nim_nuptk' => $request->nuptk,
+        ]);
+
+        // FIX: sinkronkan juga baris dosen terkait supaya data pembimbing tidak basi
+        Dosen::where('user_id', $kaprodi->user_id)->update([
+            'nama'     => $request->nama,
+            'nuptk'    => $request->nuptk,
+            'prodi_id' => $request->prodi_id,
         ]);
 
         return redirect()->route('admin.kaprodi.index')
@@ -173,7 +189,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'nama'     => 'required|string|max:255',
-            'nuptk'    => 'required|unique:dekan,nuptk',
+            'nuptk'    => 'required|unique:dekan,nuptk|unique:dosen,nuptk',
             'email'    => 'required|email|unique:users,email',
             'prodi_id' => 'required|exists:prodi,id',
         ], [
@@ -192,6 +208,15 @@ class AdminController extends Controller
             ]);
 
             Dekan::create([
+                'user_id'  => $user->id,
+                'prodi_id' => $request->prodi_id,
+                'nuptk'    => $request->nuptk,
+                'nama'     => $request->nama,
+            ]);
+
+            // FIX: agar Dekan juga muncul di pilihan dosen pembimbing (LKP/Proposal/Skripsi),
+            // buat baris terkait di tabel dosen. Tabel dosen tidak diubah strukturnya sama sekali.
+            Dosen::create([
                 'user_id'  => $user->id,
                 'prodi_id' => $request->prodi_id,
                 'nuptk'    => $request->nuptk,
@@ -216,7 +241,7 @@ class AdminController extends Controller
 
         $request->validate([
             'nama'     => 'required|string|max:255',
-            'nuptk'    => 'required|unique:dekan,nuptk,' . $id,
+            'nuptk'    => 'required|unique:dekan,nuptk,' . $id . '|unique:dosen,nuptk,' . $dekan->user_id . ',user_id',
             'prodi_id' => 'required|exists:prodi,id',
         ]);
 
@@ -229,6 +254,13 @@ class AdminController extends Controller
         $dekan->user->update([
             'username'  => $request->nama,
             'nim_nuptk' => $request->nuptk,
+        ]);
+
+        // FIX: sinkronkan juga baris dosen terkait supaya data pembimbing tidak basi
+        Dosen::where('user_id', $dekan->user_id)->update([
+            'nama'     => $request->nama,
+            'nuptk'    => $request->nuptk,
+            'prodi_id' => $request->prodi_id,
         ]);
 
         return redirect()->route('admin.dekan.index')

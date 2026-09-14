@@ -20,8 +20,8 @@ class SeminarLkpController extends Controller
             return back()->with('error', 'Data mahasiswa tidak ditemukan. Silakan hubungi admin.');
         }
 
-        if (empty($mahasiswa->pembimbing1_id)) {
-            return back()->with('error', 'Anda belum memilih dosen pembimbing 1!');
+        if (empty($mahasiswa->pembimbing_lkp_id)) {
+            return back()->with('error', 'Anda belum memilih dosen pembimbing LKP!');
         }
 
         // ✅ Validasi: cegah daftar dua kali
@@ -54,7 +54,7 @@ class SeminarLkpController extends Controller
             'tanggal_lahir'  => $request->tanggal_lahir,
             'no_hp'          => $request->no_hp,
             'judul_lkp'      => $request->judul_lkp,
-            'pembimbing1_id' => $mahasiswa->pembimbing1_id,
+            'pembimbing1_id' => $mahasiswa->pembimbing_lkp_id,
             'file_laporan'   => $laporan,
             'bukti_transfer' => $bukti,
         ]);
