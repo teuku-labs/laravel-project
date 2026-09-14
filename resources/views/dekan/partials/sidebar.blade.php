@@ -10,6 +10,9 @@
         <div class="menu-cat" style="margin-top:.75rem;">Sebagai Pembimbing</div>
         <a href="{{ route('dekan.bimbingan.index') }}" class="menu-item {{ request()->routeIs('dekan.bimbingan.*') ? 'active' : '' }}"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan</a>
         <a href="{{ route('dekan.jadwal-saya') }}" class="menu-item {{ request()->routeIs('dekan.jadwal-saya') ? 'active' : '' }}"><i class="fas fa-calendar-check"></i>Jadwal Saya</a>
+        <a href="{{ route('dekan.nilai-lkp.index') }}" class="menu-item {{ request()->routeIs('dekan.nilai-lkp.*') ? 'active' : '' }}"><i class="fas fa-star-half-alt"></i>Nilai Seminar LKP</a>
+        <a href="{{ route('dekan.nilai-proposal.index') }}" class="menu-item {{ request()->routeIs('dekan.nilai-proposal.*') ? 'active' : '' }}"><i class="fas fa-star-half-alt"></i>Nilai Seminar Proposal</a>
+        <a href="{{ route('dekan.nilai-sidang.index') }}" class="menu-item {{ request()->routeIs('dekan.nilai-sidang.*') ? 'active' : '' }}"><i class="fas fa-star-half-alt"></i>Nilai Sidang Skripsi</a>
         <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
         <a href="{{ route('dekan.profile') }}" class="menu-item {{ request()->routeIs('dekan.profile') ? 'active' : '' }}"><i class="fas fa-user"></i>Profil Saya</a>
         <form action="{{ route('logout') }}" method="POST">@csrf<button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i>Logout</button></form>

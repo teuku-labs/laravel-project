@@ -126,6 +126,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/profile',   [DosenController::class, 'profile'])->name('profile');
         Route::post('/bimbingan/{id}/approve', [DosenController::class, 'approveBimbingan'])->name('bimbingan.approve');
         Route::post('/bimbingan/{id}/reject',  [DosenController::class, 'rejectBimbingan'])->name('bimbingan.reject');
+
+        Route::get('/nilai-lkp',            [DosenController::class, 'nilaiLkpIndex'])->name('nilai-lkp.index');
+        Route::post('/nilai-lkp/{id}',      [DosenController::class, 'nilaiLkpStore'])->name('nilai-lkp.store');
+        Route::get('/nilai-proposal',       [DosenController::class, 'nilaiProposalIndex'])->name('nilai-proposal.index');
+        Route::post('/nilai-proposal/{id}', [DosenController::class, 'nilaiProposalStore'])->name('nilai-proposal.store');
+        Route::get('/nilai-sidang',         [DosenController::class, 'nilaiSidangIndex'])->name('nilai-sidang.index');
+        Route::post('/nilai-sidang/{id}',   [DosenController::class, 'nilaiSidangStore'])->name('nilai-sidang.store');
     });
 
     /*
@@ -140,6 +147,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/seminar/{id}/jadwal', [KaprodiController::class, 'seminarJadwal'])->name('seminar.jadwal');
         Route::post('/seminar/{id}/pembimbing', [KaprodiController::class, 'seminarUpdatePembimbing'])->name('seminar.pembimbing');
         Route::post('/seminar/{id}/penguji', [KaprodiController::class, 'seminarUpdatePenguji'])->name('seminar.penguji');
+        Route::get('/nilai-lkp',                [KaprodiController::class, 'nilaiIndex'])->name('nilai-lkp.index');
+        Route::post('/nilai-lkp/{id}',          [KaprodiController::class, 'nilaiStore'])->name('nilai-lkp.store');
+        Route::get('/nilai-proposal',            [KaprodiController::class, 'nilaiProposalIndex'])->name('nilai-proposal.index');
+        Route::post('/nilai-proposal/{id}',      [KaprodiController::class, 'nilaiProposalStore'])->name('nilai-proposal.store');
+        Route::get('/nilai-sidang',              [KaprodiController::class, 'nilaiSidangIndex'])->name('nilai-sidang.index');
+        Route::post('/nilai-sidang/{id}',        [KaprodiController::class, 'nilaiSidangStore'])->name('nilai-sidang.store');
+
         Route::get('/sk-pembimbing',            [KaprodiController::class, 'skPembimbingIndex'])->name('sk-pembimbing.index');
         Route::get('/sk-pembimbing/{id}',       [KaprodiController::class, 'skPembimbingShow'])->name('sk-pembimbing.show');
         Route::post('/sk-pembimbing/{id}/approve', [KaprodiController::class, 'skPembimbingApprove'])->name('sk-pembimbing.approve');
@@ -168,6 +182,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/seminar',   [DekanController::class, 'seminar'])->name('seminar');
         Route::get('/jadwal',    [DekanController::class, 'jadwal'])->name('jadwal');
         Route::get('/proposal',  [DekanController::class, 'proposal'])->name('proposal');
+        Route::get('/nilai-lkp',     [DekanController::class, 'nilaiIndex'])->name('nilai-lkp.index');
+        Route::post('/nilai-lkp/{id}', [DekanController::class, 'nilaiStore'])->name('nilai-lkp.store');
+        Route::get('/nilai-proposal', [DekanController::class, 'nilaiProposalIndex'])->name('nilai-proposal.index');
+        Route::post('/nilai-proposal/{id}', [DekanController::class, 'nilaiProposalStore'])->name('nilai-proposal.store');
+        Route::get('/nilai-sidang',  [DekanController::class, 'nilaiSidangIndex'])->name('nilai-sidang.index');
+        Route::post('/nilai-sidang/{id}', [DekanController::class, 'nilaiSidangStore'])->name('nilai-sidang.store');
         Route::get('/sidang',    [DekanController::class, 'sidang'])->name('sidang');
         Route::get('/profile',   [DekanController::class, 'profile'])->name('profile');
 

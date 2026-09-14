@@ -25,4 +25,9 @@ class Sidang extends Model
     {
         return $this->belongsTo(Dosen::class, 'pembimbing_id');
     }
+
+    public function nilai()
+    {
+        return $this->hasOne(NilaiSidang::class, 'sidang_id');
+    }
 }

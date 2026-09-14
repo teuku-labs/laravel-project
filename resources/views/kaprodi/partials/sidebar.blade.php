@@ -7,6 +7,9 @@
         <a href="{{ route('kaprodi.seminar') }}" class="menu-item {{ request()->routeIs('kaprodi.seminar') ? 'active' : '' }}"><i class="fas fa-clipboard-list"></i>Seminar LKP</a>
         <a href="{{ route('kaprodi.sidang.index') }}" class="menu-item {{ request()->routeIs('kaprodi.sidang.*') ? 'active' : '' }}"><i class="fas fa-gavel"></i>Sidang</a>
         <a href="{{ route('kaprodi.jadwal-saya') }}" class="menu-item {{ request()->routeIs('kaprodi.jadwal-saya') ? 'active' : '' }}"><i class="fas fa-calendar-alt"></i>Jadwal Saya</a>
+        <a href="{{ route('kaprodi.nilai-lkp.index') }}" class="menu-item {{ request()->routeIs('kaprodi.nilai-lkp.*') ? 'active' : '' }}"><i class="fas fa-star-half-alt"></i>Nilai Seminar LKP</a>
+        <a href="{{ route('kaprodi.nilai-proposal.index') }}" class="menu-item {{ request()->routeIs('kaprodi.nilai-proposal.*') ? 'active' : '' }}"><i class="fas fa-star-half-alt"></i>Nilai Seminar Proposal</a>
+        <a href="{{ route('kaprodi.nilai-sidang.index') }}" class="menu-item {{ request()->routeIs('kaprodi.nilai-sidang.*') ? 'active' : '' }}"><i class="fas fa-star-half-alt"></i>Nilai Sidang Skripsi</a>
         <a href="{{ route('kaprodi.sk-pembimbing.index') }}" class="menu-item {{ request()->routeIs('kaprodi.sk-pembimbing.*') ? 'active' : '' }}"><i class="fas fa-file-signature"></i>SK Pembimbing</a>
         <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
         <a href="{{ route('kaprodi.profile') }}" class="menu-item {{ request()->routeIs('kaprodi.profile') ? 'active' : '' }}"><i class="fas fa-user"></i>Profil Saya</a>

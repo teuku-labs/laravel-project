@@ -12,12 +12,26 @@ use App\Models\PengajuanSk;
 use App\Models\Sidang;
 use App\Models\PengajuanPembimbing;
 use App\Models\Dosen;
+use App\Models\NilaiSeminarLkp;
+use App\Models\Proposal;
+use App\Models\NilaiProposal;
+use App\Models\NilaiSidang;
 
 class KaprodiController extends Controller
 {
     private function getKaprodi()
     {
         return Kaprodi::where('user_id', Auth::id())->first();
+    }
+
+    /**
+     * Ambil data dosen yang terhubung dengan akun kaprodi yang sedang login
+     * (dipakai untuk cek apakah kaprodi ini juga ditunjuk sebagai
+     * pembimbing/penguji pada seminar tertentu, sehingga berhak input nilai).
+     */
+    private function getDosenSaya()
+    {
+        return Dosen::where('user_id', Auth::id())->first();
     }
 
     /*
@@ -166,6 +180,191 @@ class KaprodiController extends Controller
 
         $seminar->update(['tanggal_seminar' => $request->tanggal_seminar]);
         return back()->with('success', 'Jadwal seminar LKP berhasil ditetapkan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SEMINAR LKP
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiIndex()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $seminarList = SeminarLkp::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->with(['mahasiswa', 'dosen', 'penguji', 'nilai'])
+            ->latest()->get();
+
+        return view('kaprodi.nilai-lkp', compact('kaprodi', 'seminarList', 'dosenSaya'));
+    }
+
+    public function nilaiStore(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $seminar = SeminarLkp::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        // Kaprodi hanya boleh input nilai jika ia juga ditunjuk sebagai
+        // dosen pembimbing atau dosen penguji pada seminar tersebut.
+        $berhak = $dosenSaya && ($seminar->pembimbing1_id == $dosenSaya->id || $seminar->penguji_id == $dosenSaya->id);
+        if (!$berhak) {
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk seminar yang Anda menjadi pembimbing/penguji.']);
+        }
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiSeminarLkp::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiSeminarLkp::hitungNilaiHuruf($rataRata);
+
+        NilaiSeminarLkp::updateOrCreate(
+            ['seminar_lkp_id' => $seminar->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $kaprodi->nama,
+                'dinilai_oleh_role' => 'Kaprodi',
+            ]
+        );
+
+        return back()->with('success', 'Nilai seminar LKP berhasil disimpan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SEMINAR PROPOSAL
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiProposalIndex()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $proposalList = Proposal::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->with(['mahasiswa', 'pembimbing1', 'nilai'])
+            ->latest()->get();
+
+        return view('kaprodi.nilai-proposal', compact('kaprodi', 'proposalList', 'dosenSaya'));
+    }
+
+    public function nilaiProposalStore(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $proposal = Proposal::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        $berhak = $dosenSaya && ($proposal->pembimbing1_id == $dosenSaya->id);
+        if (!$berhak) {
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk proposal yang Anda menjadi pembimbing.']);
+        }
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiProposal::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiProposal::hitungNilaiHuruf($rataRata);
+
+        NilaiProposal::updateOrCreate(
+            ['proposal_id' => $proposal->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $kaprodi->nama,
+                'dinilai_oleh_role' => 'Kaprodi',
+            ]
+        );
+
+        return back()->with('success', 'Nilai seminar proposal berhasil disimpan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SIDANG SKRIPSI
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiSidangIndex()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $sidangList = Sidang::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->with(['mahasiswa', 'pembimbing', 'nilai'])
+            ->latest()->get();
+
+        return view('kaprodi.nilai-sidang', compact('kaprodi', 'sidangList', 'dosenSaya'));
+    }
+
+    public function nilaiSidangStore(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $sidang = Sidang::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        $berhak = $dosenSaya && ($sidang->pembimbing_id == $dosenSaya->id);
+        if (!$berhak) {
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk sidang yang Anda menjadi pembimbing.']);
+        }
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiSidang::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiSidang::hitungNilaiHuruf($rataRata);
+
+        NilaiSidang::updateOrCreate(
+            ['sidang_id' => $sidang->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $kaprodi->nama,
+                'dinilai_oleh_role' => 'Kaprodi',
+            ]
+        );
+
+        return back()->with('success', 'Nilai sidang skripsi berhasil disimpan.');
     }
 
     /*

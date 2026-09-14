@@ -26,4 +26,9 @@ class Proposal extends Model
     {
         return $this->belongsTo(Dosen::class, 'pembimbing1_id');
     }
+
+    public function nilai()
+    {
+        return $this->hasOne(NilaiProposal::class, 'proposal_id');
+    }
 }

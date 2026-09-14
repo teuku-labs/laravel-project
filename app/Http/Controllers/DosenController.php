@@ -9,6 +9,12 @@ use App\Models\Mahasiswa;
 use App\Models\Jadwal;
 use App\Models\Sk;
 use App\Models\PengajuanPembimbing;
+use App\Models\SeminarLkp;
+use App\Models\Proposal;
+use App\Models\Sidang;
+use App\Models\NilaiSeminarLkp;
+use App\Models\NilaiProposal;
+use App\Models\NilaiSidang;
 
 class DosenController extends Controller
 {
@@ -135,6 +141,162 @@ class DosenController extends Controller
         return back()->with('success',
             'Permintaan bimbingan dari ' . $mahasiswa->nama . ' telah ditolak.'
         );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SEMINAR LKP
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiLkpIndex()
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $seminarList = SeminarLkp::where('pembimbing1_id', $dosen->id)
+            ->orWhere('penguji_id', $dosen->id)
+            ->with(['mahasiswa', 'dosen', 'penguji', 'nilai'])
+            ->latest()->get();
+
+        return view('dosen.nilai-lkp', compact('dosen', 'seminarList'));
+    }
+
+    public function nilaiLkpStore(Request $request, $id)
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $seminar = SeminarLkp::where('pembimbing1_id', $dosen->id)
+            ->orWhere('penguji_id', $dosen->id)
+            ->findOrFail($id);
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiSeminarLkp::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiSeminarLkp::hitungNilaiHuruf($rataRata);
+
+        NilaiSeminarLkp::updateOrCreate(
+            ['seminar_lkp_id' => $seminar->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $dosen->nama,
+                'dinilai_oleh_role' => 'Dosen',
+            ]
+        );
+
+        return back()->with('success', 'Nilai seminar LKP berhasil disimpan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SEMINAR PROPOSAL
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiProposalIndex()
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $proposalList = Proposal::where('pembimbing1_id', $dosen->id)
+            ->with(['mahasiswa', 'pembimbing1', 'nilai'])
+            ->latest()->get();
+
+        return view('dosen.nilai-proposal', compact('dosen', 'proposalList'));
+    }
+
+    public function nilaiProposalStore(Request $request, $id)
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $proposal = Proposal::where('pembimbing1_id', $dosen->id)->findOrFail($id);
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiProposal::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiProposal::hitungNilaiHuruf($rataRata);
+
+        NilaiProposal::updateOrCreate(
+            ['proposal_id' => $proposal->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $dosen->nama,
+                'dinilai_oleh_role' => 'Dosen',
+            ]
+        );
+
+        return back()->with('success', 'Nilai seminar proposal berhasil disimpan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SIDANG SKRIPSI
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiSidangIndex()
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $sidangList = Sidang::where('pembimbing_id', $dosen->id)
+            ->with(['mahasiswa', 'pembimbing', 'nilai'])
+            ->latest()->get();
+
+        return view('dosen.nilai-sidang', compact('dosen', 'sidangList'));
+    }
+
+    public function nilaiSidangStore(Request $request, $id)
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $sidang = Sidang::where('pembimbing_id', $dosen->id)->findOrFail($id);
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiSidang::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiSidang::hitungNilaiHuruf($rataRata);
+
+        NilaiSidang::updateOrCreate(
+            ['sidang_id' => $sidang->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $dosen->nama,
+                'dinilai_oleh_role' => 'Dosen',
+            ]
+        );
+
+        return back()->with('success', 'Nilai sidang skripsi berhasil disimpan.');
     }
 
     /*

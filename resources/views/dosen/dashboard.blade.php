@@ -527,6 +527,23 @@
                     <span class="badge">{{ $mahasiswaCount }}</span>
                 @endif
             </a>
+
+            <div class="menu-category" style="margin-top: 2rem;">Penilaian</div>
+
+            <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item">
+                <i class="fas fa-star-half-alt"></i>
+                <span>Nilai Seminar LKP</span>
+            </a>
+
+            <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item">
+                <i class="fas fa-star-half-alt"></i>
+                <span>Nilai Seminar Proposal</span>
+            </a>
+
+            <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item">
+                <i class="fas fa-star-half-alt"></i>
+                <span>Nilai Sidang Skripsi</span>
+            </a>
             
             <div class="menu-category" style="margin-top: 2rem;">Lainnya</div>
             

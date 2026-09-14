@@ -11,6 +11,10 @@ use App\Models\Jadwal;
 use App\Models\Proposal;
 use App\Models\Sidang;
 use App\Models\PengajuanPembimbing;
+use App\Models\Dosen;
+use App\Models\NilaiSeminarLkp;
+use App\Models\NilaiProposal;
+use App\Models\NilaiSidang;
 
 class DekanController extends Controller
 {
@@ -24,6 +28,16 @@ class DekanController extends Controller
         return Dekan::with(['user', 'prodi'])
                     ->where('user_id', Auth::id())
                     ->first();
+    }
+
+    /**
+     * Ambil data dosen yang terhubung dengan akun dekan yang sedang login
+     * (dipakai untuk cek apakah dekan ini juga ditunjuk sebagai
+     * pembimbing/penguji pada seminar tertentu, sehingga berhak input nilai).
+     */
+    private function getDosenSaya()
+    {
+        return Dosen::where('user_id', Auth::id())->first();
     }
 
     /*
@@ -76,6 +90,183 @@ class DekanController extends Controller
 
         $seminarList = SeminarLkp::with(['mahasiswa', 'dosen'])->latest()->get();
         return view('dekan.seminar', compact('dekan', 'seminarList'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SEMINAR LKP
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiIndex()
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $seminarList = SeminarLkp::with(['mahasiswa', 'dosen', 'penguji', 'nilai'])
+            ->latest()->get();
+
+        return view('dekan.nilai', compact('dekan', 'seminarList', 'dosenSaya'));
+    }
+
+    public function nilaiStore(Request $request, $id)
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $seminar = SeminarLkp::findOrFail($id);
+
+        // Dekan hanya boleh input nilai jika ia juga ditunjuk sebagai
+        // dosen pembimbing atau dosen penguji pada seminar tersebut.
+        $berhak = $dosenSaya && ($seminar->pembimbing1_id == $dosenSaya->id || $seminar->penguji_id == $dosenSaya->id);
+        if (!$berhak) {
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk seminar yang Anda menjadi pembimbing/penguji.']);
+        }
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiSeminarLkp::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiSeminarLkp::hitungNilaiHuruf($rataRata);
+
+        NilaiSeminarLkp::updateOrCreate(
+            ['seminar_lkp_id' => $seminar->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $dekan->nama,
+                'dinilai_oleh_role' => 'Dekan',
+            ]
+        );
+
+        return back()->with('success', 'Nilai seminar LKP berhasil disimpan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SEMINAR PROPOSAL
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiProposalIndex()
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $proposalList = Proposal::with(['mahasiswa', 'pembimbing1', 'nilai'])->latest()->get();
+
+        return view('dekan.nilai-proposal', compact('dekan', 'proposalList', 'dosenSaya'));
+    }
+
+    public function nilaiProposalStore(Request $request, $id)
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $proposal = Proposal::findOrFail($id);
+
+        $berhak = $dosenSaya && ($proposal->pembimbing1_id == $dosenSaya->id);
+        if (!$berhak) {
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk proposal yang Anda menjadi pembimbing.']);
+        }
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiProposal::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiProposal::hitungNilaiHuruf($rataRata);
+
+        NilaiProposal::updateOrCreate(
+            ['proposal_id' => $proposal->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $dekan->nama,
+                'dinilai_oleh_role' => 'Dekan',
+            ]
+        );
+
+        return back()->with('success', 'Nilai seminar proposal berhasil disimpan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NILAI SIDANG SKRIPSI
+    |--------------------------------------------------------------------------
+    */
+    public function nilaiSidangIndex()
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $sidangList = Sidang::with(['mahasiswa', 'pembimbing', 'nilai'])->latest()->get();
+
+        return view('dekan.nilai-sidang', compact('dekan', 'sidangList', 'dosenSaya'));
+    }
+
+    public function nilaiSidangStore(Request $request, $id)
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $dosenSaya = $this->getDosenSaya();
+
+        $sidang = Sidang::findOrFail($id);
+
+        $berhak = $dosenSaya && ($sidang->pembimbing_id == $dosenSaya->id);
+        if (!$berhak) {
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk sidang yang Anda menjadi pembimbing.']);
+        }
+
+        $request->validate([
+            'isi_materi'        => 'required|numeric|min:0|max:100',
+            'penyajian'         => 'required|numeric|min:0|max:100',
+            'penguasaan_materi' => 'required|numeric|min:0|max:100',
+            'sikap_mental'      => 'required|numeric|min:0|max:100',
+        ]);
+
+        $rataRata   = NilaiSidang::hitungRataRata($request->isi_materi, $request->penyajian, $request->penguasaan_materi, $request->sikap_mental);
+        $nilaiHuruf = NilaiSidang::hitungNilaiHuruf($rataRata);
+
+        NilaiSidang::updateOrCreate(
+            ['sidang_id' => $sidang->id],
+            [
+                'isi_materi'        => $request->isi_materi,
+                'penyajian'         => $request->penyajian,
+                'penguasaan_materi' => $request->penguasaan_materi,
+                'sikap_mental'      => $request->sikap_mental,
+                'rata_rata'         => $rataRata,
+                'nilai_huruf'       => $nilaiHuruf,
+                'dinilai_oleh'      => $dekan->nama,
+                'dinilai_oleh_role' => 'Dekan',
+            ]
+        );
+
+        return back()->with('success', 'Nilai sidang skripsi berhasil disimpan.');
     }
 
     /*

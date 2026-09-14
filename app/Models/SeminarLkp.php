@@ -37,4 +37,9 @@ class SeminarLkp extends Model
     {
         return $this->belongsTo(Dosen::class, 'penguji_id');
     }
+
+    public function nilai()
+    {
+        return $this->hasOne(NilaiSeminarLkp::class, 'seminar_lkp_id');
+    }
 }

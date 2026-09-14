@@ -61,6 +61,10 @@
             <a href="{{ route('dosen.jadwal') }}" class="menu-item active"><i class="fas fa-calendar-alt"></i><span>Jadwal Saya</span>@if($upcomingJadwal > 0)<span class="badge">{{ $upcomingJadwal }}</span>@endif</a>
             <a href="{{ route('dosen.sk') }}" class="menu-item"><i class="fas fa-file-download"></i><span>Download SK</span></a>
             <a href="{{ route('dosen.mahasiswa') }}" class="menu-item"><i class="fas fa-user-graduate"></i><span>Mahasiswa Bimbingan</span>@if($mahasiswaCount > 0)<span class="badge">{{ $mahasiswaCount }}</span>@endif</a>
+            <div class="menu-category" style="margin-top:1.5rem;">Penilaian</div>
+            <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i><span>Nilai Seminar LKP</span></a>
+            <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i><span>Nilai Seminar Proposal</span></a>
+            <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i><span>Nilai Sidang Skripsi</span></a>
             <div class="menu-category" style="margin-top:2rem;">Lainnya</div>
             <a href="{{ route('dosen.profile') }}" class="menu-item"><i class="fas fa-user"></i><span>Profil Saya</span></a>
             <form action="{{ route('logout') }}" method="POST">@csrf<button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button></form>

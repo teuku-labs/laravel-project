@@ -81,6 +81,10 @@
         <a href="{{ route('dosen.mahasiswa') }}" class="menu-item active"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan
             @if($pengajuanPending->count() > 0)<span class="badge-menu">{{ $pengajuanPending->count() }}</span>@endif
         </a>
+        <div class="menu-cat" style="margin-top:1.5rem;">Penilaian</div>
+        <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i>Nilai Seminar LKP</a>
+        <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i>Nilai Seminar Proposal</a>
+        <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i>Nilai Sidang Skripsi</a>
         <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
         <a href="{{ route('dosen.profile') }}" class="menu-item"><i class="fas fa-user"></i>Profil Saya</a>
         <form action="{{ route('logout') }}" method="POST">@csrf
