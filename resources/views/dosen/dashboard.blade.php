@@ -49,7 +49,7 @@
         }
         
         .sidebar-brand {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: white;
             text-decoration: none;
@@ -62,9 +62,9 @@
         
         .menu-category {
             padding: 0.75rem 1.5rem;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.5);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -86,9 +86,16 @@
         }
         
         .menu-item i {
-            width: 25px;
+            width: 22px;
             margin-right: 0.75rem;
         }
+        .menu-dropdown-toggle{width:100%;background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;}
+        .menu-dropdown-toggle .dropdown-arrow{margin-left:auto;font-size:.7rem;transition:transform .25s;}
+        .menu-dropdown.open>.menu-dropdown-toggle{background:rgba(255,255,255,.1);color:#fff;}
+        .menu-dropdown.open>.menu-dropdown-toggle .dropdown-arrow{transform:rotate(180deg);}
+        .menu-dropdown-content{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+        .menu-dropdown.open>.menu-dropdown-content{max-height:200px;}
+        .menu-dropdown-content .menu-item{padding-left:3.3rem;font-size:.85rem;}
         
         .menu-item .badge {
             margin-left: auto;
@@ -530,20 +537,16 @@
 
             <div class="menu-category" style="margin-top: 2rem;">Penilaian</div>
 
-            <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item">
-                <i class="fas fa-star-half-alt"></i>
-                <span>Nilai Seminar LKP</span>
-            </a>
-
-            <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item">
-                <i class="fas fa-star-half-alt"></i>
-                <span>Nilai Seminar Proposal</span>
-            </a>
-
-            <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item">
-                <i class="fas fa-star-half-alt"></i>
-                <span>Nilai Sidang Skripsi</span>
-            </a>
+            <div class="menu-dropdown {{ request()->routeIs('dosen.nilai-lkp.*','dosen.nilai-proposal.*','dosen.nilai-sidang.*') ? 'open' : '' }}">
+                <button type="button" class="menu-item menu-dropdown-toggle" onclick="this.closest('.menu-dropdown').classList.toggle('open')">
+                    <i class="fas fa-star-half-alt"></i><span>Nilai</span><i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                <div class="menu-dropdown-content">
+                    <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-lkp.*') ? 'active' : '' }}"><span>Nilai Seminar LKP</span></a>
+                    <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-proposal.*') ? 'active' : '' }}"><span>Nilai Seminar Proposal</span></a>
+                    <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-sidang.*') ? 'active' : '' }}"><span>Nilai Sidang Skripsi</span></a>
+                </div>
+            </div>
             
             <div class="menu-category" style="margin-top: 2rem;">Lainnya</div>
             

@@ -13,12 +13,19 @@
         body { font-family:'Poppins',sans-serif; background-color:var(--bg-color); color:var(--text-dark); }
         .sidebar { position:fixed; top:0; left:0; width:var(--sidebar-width); height:100vh; background:linear-gradient(180deg,var(--dark-green) 0%,var(--primary-green) 100%); z-index:1000; overflow-y:auto; }
         .sidebar-header { padding:1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); }
-        .sidebar-brand { font-size:1.3rem; font-weight:700; color:white; text-decoration:none; display:flex; align-items:center; gap:0.75rem; }
+        .sidebar-brand { font-size:1.2rem; font-weight:700; color:white; text-decoration:none; display:flex; align-items:center; gap:0.75rem; }
         .sidebar-menu { padding:1rem 0; }
-        .menu-category { padding:0.75rem 1.5rem; font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:1px; }
+        .menu-category { padding:0.75rem 1.5rem; font-size:0.72rem; font-weight:600; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; }
         .menu-item { display:flex; align-items:center; padding:0.85rem 1.5rem; color:rgba(255,255,255,0.9); text-decoration:none; transition:all 0.3s; border-left:3px solid transparent; }
         .menu-item:hover,.menu-item.active { background:rgba(255,255,255,0.1); color:white; border-left-color:white; }
-        .menu-item i { width:25px; margin-right:0.75rem; }
+        .menu-item i { width:22px; margin-right:0.75rem; }
+        .menu-dropdown-toggle{width:100%;background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;}
+        .menu-dropdown-toggle .dropdown-arrow{margin-left:auto;font-size:.7rem;transition:transform .25s;}
+        .menu-dropdown.open>.menu-dropdown-toggle{background:rgba(255,255,255,.1);color:#fff;}
+        .menu-dropdown.open>.menu-dropdown-toggle .dropdown-arrow{transform:rotate(180deg);}
+        .menu-dropdown-content{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+        .menu-dropdown.open>.menu-dropdown-content{max-height:200px;}
+        .menu-dropdown-content .menu-item{padding-left:3.3rem;font-size:.85rem;}
         .menu-item .badge { margin-left:auto; background:rgba(255,255,255,0.2); color:white; font-size:0.7rem; padding:0.25rem 0.5rem; border-radius:10px; }
         .main-wrapper { margin-left:var(--sidebar-width); min-height:100vh; }
         .top-navbar { background:white; box-shadow:0 2px 15px rgba(0,0,0,0.05); padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:999; }
@@ -64,9 +71,16 @@
             <a href="{{ route('dosen.sk') }}" class="menu-item active"><i class="fas fa-file-download"></i><span>Download SK</span></a>
             <a href="{{ route('dosen.mahasiswa') }}" class="menu-item"><i class="fas fa-user-graduate"></i><span>Mahasiswa Bimbingan</span>@if($mahasiswaCount > 0)<span class="badge">{{ $mahasiswaCount }}</span>@endif</a>
             <div class="menu-category" style="margin-top:1.5rem;">Penilaian</div>
-            <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i><span>Nilai Seminar LKP</span></a>
-            <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i><span>Nilai Seminar Proposal</span></a>
-            <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i><span>Nilai Sidang Skripsi</span></a>
+            <div class="menu-dropdown {{ request()->routeIs('dosen.nilai-lkp.*','dosen.nilai-proposal.*','dosen.nilai-sidang.*') ? 'open' : '' }}">
+                <button type="button" class="menu-item menu-dropdown-toggle" onclick="this.closest('.menu-dropdown').classList.toggle('open')">
+                    <i class="fas fa-star-half-alt"></i><span>Nilai</span><i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                <div class="menu-dropdown-content">
+                    <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-lkp.*') ? 'active' : '' }}"><span>Nilai Seminar LKP</span></a>
+                    <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-proposal.*') ? 'active' : '' }}"><span>Nilai Seminar Proposal</span></a>
+                    <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-sidang.*') ? 'active' : '' }}"><span>Nilai Sidang Skripsi</span></a>
+                </div>
+            </div>
             <div class="menu-category" style="margin-top:2rem;">Lainnya</div>
             <a href="{{ route('dosen.profile') }}" class="menu-item"><i class="fas fa-user"></i><span>Profil Saya</span></a>
             <form action="{{ route('logout') }}" method="POST">@csrf<button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button></form>

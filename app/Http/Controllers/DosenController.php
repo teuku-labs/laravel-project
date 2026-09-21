@@ -153,6 +153,9 @@ class DosenController extends Controller
         $dosen = $this->getDosen();
         if (!$dosen) return redirect()->route('login');
 
+        // Pembimbing & penguji sama-sama bisa MELIHAT, tapi hanya penguji
+        // yang boleh mengisi/mengedit nilai (dibatasi di nilaiLkpStore()
+        // dan di view lewat status read-only).
         $seminarList = SeminarLkp::where('pembimbing1_id', $dosen->id)
             ->orWhere('penguji_id', $dosen->id)
             ->with(['mahasiswa', 'dosen', 'penguji', 'nilai'])
@@ -166,8 +169,8 @@ class DosenController extends Controller
         $dosen = $this->getDosen();
         if (!$dosen) return redirect()->route('login');
 
-        $seminar = SeminarLkp::where('pembimbing1_id', $dosen->id)
-            ->orWhere('penguji_id', $dosen->id)
+        // Hanya dosen yang ditunjuk sebagai penguji yang boleh mengisi nilai.
+        $seminar = SeminarLkp::where('penguji_id', $dosen->id)
             ->findOrFail($id);
 
         $request->validate([
@@ -211,7 +214,7 @@ class DosenController extends Controller
             ->with(['mahasiswa', 'pembimbing1', 'nilai'])
             ->latest()->get();
 
-        return view('dosen.nilai-proposal', compact('dosen', 'proposalList'));
+        return view('dosen.proposal', compact('dosen', 'proposalList'));
     }
 
     public function nilaiProposalStore(Request $request, $id)
@@ -262,7 +265,7 @@ class DosenController extends Controller
             ->with(['mahasiswa', 'pembimbing', 'nilai'])
             ->latest()->get();
 
-        return view('dosen.nilai-sidang', compact('dosen', 'sidangList'));
+        return view('dosen.sidang', compact('dosen', 'sidangList'));
     }
 
     public function nilaiSidangStore(Request $request, $id)

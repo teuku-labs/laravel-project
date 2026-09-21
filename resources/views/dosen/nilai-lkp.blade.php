@@ -16,7 +16,14 @@
         .menu-item{display:flex;align-items:center;padding:.85rem 1.5rem;color:rgba(255,255,255,.9);text-decoration:none;transition:all .3s;border-left:3px solid transparent;}
         .menu-item:hover,.menu-item.active{background:rgba(255,255,255,.1);color:white;border-left-color:white;}
         .menu-item i{width:22px;margin-right:.75rem;}
-        .badge-menu{margin-left:auto;background:rgba(255,255,255,.25);color:white;font-size:.7rem;padding:.2rem .5rem;border-radius:10px;}
+        .menu-dropdown-toggle{width:100%;background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;}
+        .menu-dropdown-toggle .dropdown-arrow{margin-left:auto;font-size:.7rem;transition:transform .25s;}
+        .menu-dropdown.open>.menu-dropdown-toggle{background:rgba(255,255,255,.1);color:#fff;}
+        .menu-dropdown.open>.menu-dropdown-toggle .dropdown-arrow{transform:rotate(180deg);}
+        .menu-dropdown-content{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+        .menu-dropdown.open>.menu-dropdown-content{max-height:200px;}
+        .menu-dropdown-content .menu-item{padding-left:3.3rem;font-size:.85rem;}
+        .badge-menu{margin-left:auto;background:rgba(255,255,255,.2);color:white;font-size:.7rem;padding:.25rem .5rem;border-radius:10px;}
         .main{margin-left:var(--sidebar);min-height:100vh;}
         .topbar{background:white;box-shadow:0 2px 15px rgba(0,0,0,.05);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:999;}
         .toggle-btn{background:none;border:none;font-size:1.3rem;color:var(--text);cursor:pointer;}
@@ -50,16 +57,32 @@
     <nav class="sidebar-menu">
         <div class="menu-cat">Menu Utama</div>
         <a href="{{ route('dosen.dashboard') }}" class="menu-item"><i class="fas fa-home"></i>Dashboard</a>
-        <a href="{{ route('dosen.jadwal') }}" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Saya</a>
+        <a href="{{ route('dosen.jadwal') }}" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Saya
+            @if($upcomingJadwal > 0)
+                <span class="badge-menu">{{ $upcomingJadwal }}</span>
+            @endif
+        </a>
         <a href="{{ route('dosen.sk') }}" class="menu-item"><i class="fas fa-file-download"></i>Download SK</a>
-        <a href="{{ route('dosen.mahasiswa') }}" class="menu-item"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan</a>
+        <a href="{{ route('dosen.mahasiswa') }}" class="menu-item"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan
+            @if($mahasiswaCount > 0)
+                <span class="badge-menu">{{ $mahasiswaCount }}</span>
+            @endif
+        </a>
         <div class="menu-cat" style="margin-top:1.5rem;">Penilaian</div>
-        <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item active"><i class="fas fa-star-half-alt"></i>Nilai Seminar LKP</a>
-        <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i>Nilai Seminar Proposal</a>
-        <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item"><i class="fas fa-star-half-alt"></i>Nilai Sidang Skripsi</a>
+        <div class="menu-dropdown {{ request()->routeIs('dosen.nilai-lkp.*','dosen.nilai-proposal.*','dosen.nilai-sidang.*') ? 'open' : '' }}">
+            <button type="button" class="menu-item menu-dropdown-toggle" onclick="this.closest('.menu-dropdown').classList.toggle('open')">
+                <i class="fas fa-star-half-alt"></i>Nilai<i class="fas fa-chevron-down dropdown-arrow"></i>
+            </button>
+            <div class="menu-dropdown-content">
+                <a href="{{ route('dosen.nilai-lkp.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-lkp.*') ? 'active' : '' }}">Nilai Seminar LKP</a>
+                <a href="{{ route('dosen.nilai-proposal.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-proposal.*') ? 'active' : '' }}">Nilai Seminar Proposal</a>
+                <a href="{{ route('dosen.nilai-sidang.index') }}" class="menu-item {{ request()->routeIs('dosen.nilai-sidang.*') ? 'active' : '' }}">Nilai Sidang Skripsi</a>
+            </div>
+        </div>
         <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
         <a href="{{ route('dosen.profile') }}" class="menu-item"><i class="fas fa-user"></i>Profil Saya</a>
-        <form action="{{ route('logout') }}" method="POST">@csrf
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
             <button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i>Logout</button>
         </form>
     </nav>
@@ -67,19 +90,39 @@
 
 <div class="main">
     <nav class="topbar">
-        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="font-weight:600;font-size:.95rem;">Nilai Seminar LKP</span></div>
-        <div style="display:flex;align-items:center;gap:.75rem;"><div class="avatar">{{ substr($dosen->nama ?? 'D', 0, 1) }}</div><div><div style="font-weight:600;font-size:.9rem;">{{ $dosen->nama ?? '-' }}</div><div style="font-size:.75rem;color:var(--muted);">Dosen</div></div></div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <span style="font-weight:600;font-size:.95rem;">Nilai Seminar LKP</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem;">
+            <div class="avatar">{{ substr($dosen->nama ?? 'D', 0, 1) }}</div>
+            <div>
+                <div style="font-weight:600;font-size:.9rem;">{{ $dosen->nama ?? '-' }}</div>
+                <div style="font-size:.75rem;color:var(--muted);">Dosen</div>
+            </div>
+        </div>
     </nav>
 
     <div class="content">
-        @if(session('success'))<div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
-        @if($errors->any())<div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle me-2"></i>{{ $errors->first() }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i>{{ $errors->first() }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
 
         <div class="table-card">
             <div class="table-header">
                 <div>
                     <strong style="font-size:1rem;">Input &amp; Nilai Seminar LKP</strong>
-                    <p style="color:var(--muted);font-size:.83rem;margin:0;">Mahasiswa yang Anda bimbing/uji &middot; Total: {{ $seminarList->count() }}</p>
+                    <p style="color:var(--muted);font-size:.83rem;margin:0;">Mahasiswa yang Anda bimbing/uji &middot; Total: {{ $seminarList->count() }} &middot; <em>Nilai hanya bisa diisi oleh dosen penguji</em></p>
                 </div>
                 <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Cari mahasiswa..."></div>
             </div>
@@ -99,32 +142,54 @@
                             <th rowspan="2">Aksi</th>
                         </tr>
                         <tr>
-                            <th>Isi Materi</th><th>Penyajian</th><th>Penguasaan Materi</th><th>Sikap Mental</th>
+                            <th>Isi Materi</th>
+                            <th>Penyajian</th>
+                            <th>Penguasaan Materi</th>
+                            <th>Sikap Mental</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($seminarList as $i => $s)
-                        @php
-                            $nilai = $s->nilai;
-                            $formId = 'form-nilai-' . $s->id;
-                            $peran = $s->pembimbing1_id == $dosen->id ? 'Pembimbing' : 'Penguji';
-                        @endphp
-                        <tr>
-                            <td>{{ $i+1 }}</td>
-                            <td class="text-start">{{ Str::limit($s->judul_lkp, 30) }}</td>
-                            <td class="text-start"><strong>{{ $s->mahasiswa->nama ?? '-' }}</strong></td>
-                            <td>{{ $s->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $peran }}</td>
-                            <td><input type="number" step="0.01" min="0" max="100" name="isi_materi" form="{{ $formId }}" class="nilai-input" value="{{ old('isi_materi', $nilai->isi_materi ?? '') }}" required></td>
-                            <td><input type="number" step="0.01" min="0" max="100" name="penyajian" form="{{ $formId }}" class="nilai-input" value="{{ old('penyajian', $nilai->penyajian ?? '') }}" required></td>
-                            <td><input type="number" step="0.01" min="0" max="100" name="penguasaan_materi" form="{{ $formId }}" class="nilai-input" value="{{ old('penguasaan_materi', $nilai->penguasaan_materi ?? '') }}" required></td>
-                            <td><input type="number" step="0.01" min="0" max="100" name="sikap_mental" form="{{ $formId }}" class="nilai-input" value="{{ old('sikap_mental', $nilai->sikap_mental ?? '') }}" required></td>
-                            <td class="rata-cell">{{ $nilai->rata_rata ?? '-' }}</td>
-                            <td><span class="badge-huruf">{{ $nilai->nilai_huruf ?? '-' }}</span></td>
-                            <td><button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button></td>
-                        </tr>
+                            @php
+                                $nilai = $s->nilai;
+                                $formId = 'form-nilai-' . $s->id;
+                                $bisaEdit = $s->penguji_id == $dosen->id;
+                                $peran = $bisaEdit ? 'Penguji' : 'Pembimbing';
+                            @endphp
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td class="text-start">{{ Str::limit($s->judul_lkp, 30) }}</td>
+                                <td class="text-start"><strong>{{ $s->mahasiswa->nama ?? '-' }}</strong></td>
+                                <td>{{ $s->mahasiswa->nim ?? '-' }}</td>
+                                <td>{{ $peran }}</td>
+                                @if($bisaEdit)
+                                    <td><input type="number" step="0.01" min="0" max="100" name="isi_materi" form="{{ $formId }}" class="nilai-input" value="{{ old('isi_materi', $nilai->isi_materi ?? '') }}" required></td>
+                                    <td><input type="number" step="0.01" min="0" max="100" name="penyajian" form="{{ $formId }}" class="nilai-input" value="{{ old('penyajian', $nilai->penyajian ?? '') }}" required></td>
+                                    <td><input type="number" step="0.01" min="0" max="100" name="penguasaan_materi" form="{{ $formId }}" class="nilai-input" value="{{ old('penguasaan_materi', $nilai->penguasaan_materi ?? '') }}" required></td>
+                                    <td><input type="number" step="0.01" min="0" max="100" name="sikap_mental" form="{{ $formId }}" class="nilai-input" value="{{ old('sikap_mental', $nilai->sikap_mental ?? '') }}" required></td>
+                                    <td class="rata-cell">{{ $nilai->rata_rata ?? '-' }}</td>
+                                    <td><span class="badge-huruf">{{ $nilai->nilai_huruf ?? '-' }}</span></td>
+                                    <td><button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button></td>
+                                @else
+                                    {{-- Read-only: pembimbing hanya bisa melihat, tidak bisa mengedit --}}
+                                    <td>{{ $nilai->isi_materi ?? '-' }}</td>
+                                    <td>{{ $nilai->penyajian ?? '-' }}</td>
+                                    <td>{{ $nilai->penguasaan_materi ?? '-' }}</td>
+                                    <td>{{ $nilai->sikap_mental ?? '-' }}</td>
+                                    <td class="rata-cell">{{ $nilai->rata_rata ?? '-' }}</td>
+                                    <td><span class="badge-huruf">{{ $nilai->nilai_huruf ?? '-' }}</span></td>
+                                    <td><span style="color:var(--muted);font-size:.95rem;" title="Lihat saja"><i class="fas fa-lock"></i></span></td>
+                                @endif
+                            </tr>
                         @empty
-                        <tr><td colspan="11"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada seminar LKP yang Anda bimbing/uji.</p></div></td></tr>
+                            <tr>
+                                <td colspan="11">
+                                    <div class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>Belum ada seminar LKP yang Anda bimbing/uji.</p>
+                                    </div>
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -132,17 +197,23 @@
         </div>
 
         @foreach($seminarList as $s)
-            <form id="form-nilai-{{ $s->id }}" action="{{ route('dosen.nilai-lkp.store', $s->id) }}" method="POST" style="display:none;">@csrf</form>
+            @if($s->penguji_id == $dosen->id)
+                <form id="form-nilai-{{ $s->id }}" action="{{ route('dosen.nilai-lkp.store', $s->id) }}" method="POST" style="display:none;">
+                    @csrf
+                </form>
+            @endif
         @endforeach
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.getElementById('sidebarToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('show'));
-    document.getElementById('searchInput').addEventListener('input', function() {
+    document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('show'));
+    document.getElementById('searchInput').addEventListener('input', function () {
         const q = this.value.toLowerCase();
-        document.querySelectorAll('#nilaiTable tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+        document.querySelectorAll('#nilaiTable tbody tr').forEach(r => {
+            r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
     });
 </script>
 </body>
