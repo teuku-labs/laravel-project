@@ -210,7 +210,11 @@ class DosenController extends Controller
         $dosen = $this->getDosen();
         if (!$dosen) return redirect()->route('login');
 
-        $proposalList = Proposal::where('pembimbing1_id', $dosen->id)
+        // Hanya proposal yang dosen ini uji (pembahas/penguji 1 atau 2)
+        $proposalList = Proposal::where(function ($q) use ($dosen) {
+                $q->where('penguji1_id', $dosen->id)
+                  ->orWhere('penguji2_id', $dosen->id);
+            })
             ->with(['mahasiswa', 'pembimbing1', 'nilai'])
             ->latest()->get();
 
@@ -222,7 +226,10 @@ class DosenController extends Controller
         $dosen = $this->getDosen();
         if (!$dosen) return redirect()->route('login');
 
-        $proposal = Proposal::where('pembimbing1_id', $dosen->id)->findOrFail($id);
+        $proposal = Proposal::where(function ($q) use ($dosen) {
+                $q->where('penguji1_id', $dosen->id)
+                  ->orWhere('penguji2_id', $dosen->id);
+            })->findOrFail($id);
 
         $request->validate([
             'isi_materi'        => 'required|numeric|min:0|max:100',
@@ -261,7 +268,11 @@ class DosenController extends Controller
         $dosen = $this->getDosen();
         if (!$dosen) return redirect()->route('login');
 
-        $sidangList = Sidang::where('pembimbing_id', $dosen->id)
+        // Hanya sidang yang dosen ini uji (pembahas/penguji 1 atau 2)
+        $sidangList = Sidang::where(function ($q) use ($dosen) {
+                $q->where('penguji1_id', $dosen->id)
+                  ->orWhere('penguji2_id', $dosen->id);
+            })
             ->with(['mahasiswa', 'pembimbing', 'nilai'])
             ->latest()->get();
 
@@ -273,7 +284,10 @@ class DosenController extends Controller
         $dosen = $this->getDosen();
         if (!$dosen) return redirect()->route('login');
 
-        $sidang = Sidang::where('pembimbing_id', $dosen->id)->findOrFail($id);
+        $sidang = Sidang::where(function ($q) use ($dosen) {
+                $q->where('penguji1_id', $dosen->id)
+                  ->orWhere('penguji2_id', $dosen->id);
+            })->findOrFail($id);
 
         $request->validate([
             'isi_materi'        => 'required|numeric|min:0|max:100',

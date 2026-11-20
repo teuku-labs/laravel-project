@@ -85,7 +85,7 @@
                     <strong style="font-size:1rem;">Input &amp; Nilai Sidang Skripsi</strong>
                     <p style="color:var(--muted);font-size:.83rem;margin:0;">
                         Total: {{ $sidangList->count() }} mahasiswa &middot;
-                        Anda hanya bisa mengisi nilai untuk sidang yang Anda menjadi pembimbing.
+                        Anda hanya bisa mengisi nilai untuk sidang yang Anda menjadi pembahas/penguji.
                     </p>
                 </div>
                 <div class="search-box">
@@ -118,7 +118,7 @@
                         @forelse($sidangList as $i => $sd)
                         @php
                             $nilai = $sd->nilai;
-                            $berhak = $dosenSaya && ($sd->pembimbing_id == $dosenSaya->id);
+                            $berhak = $sd->bolehDinilaiOleh($dosenSaya);
                             $formId = 'form-nilai-' . $sd->id;
                         @endphp
                         <tr>
@@ -136,7 +136,7 @@
                                 @if($berhak)
                                     <button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
                                 @else
-                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan pembimbing Anda</span>
+                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan penguji Anda</span>
                                 @endif
                             </td>
                         </tr>

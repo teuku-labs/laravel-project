@@ -924,8 +924,8 @@
                 
                 <div class="requirements" style="margin: 0 0 1rem 0; padding: 0.75rem 1rem;">
                     <ul>
-                        <li class="checked"><i class="fas fa-check-circle"></i> Laporan LKP</li>
-                        <li class="checked"><i class="fas fa-check-circle"></i> Log Book</li>
+                        <li class="{{ $status['lkp'] ?? false ? 'checked' : '' }}"><i class="fas {{ $status['lkp'] ?? false ? 'fa-check-circle' : 'fa-circle' }}"></i> Berkas Laporan LKP (PDF)</li>
+                        <li class="{{ $status['lkp'] ?? false ? 'checked' : '' }}"><i class="fas {{ $status['lkp'] ?? false ? 'fa-check-circle' : 'fa-circle' }}"></i> Bukti Transfer</li>
                     </ul>
                 </div>
 
@@ -956,16 +956,16 @@
                 </div>
                 
                 @if($status['proposal'] ?? false)
-                    @if($proposal->admin_verified ?? false)
+                    @if($proposal->tanggal_seminar ?? false)
                         <span class="status-badge status-completed mb-3">
-                            <i class="fas fa-check-circle"></i> Diverifikasi
+                            <i class="fas fa-check-circle"></i> Terjadwal
                         </span>
                     @else
                         <span class="status-badge status-pending mb-3">
-                            <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi
+                            <i class="fas fa-hourglass-half"></i> Menunggu Jadwal Kaprodi
                         </span>
                     @endif
-                @elseif(count($pembimbing ?? []) >= 2)
+                @elseif(count($pembimbing ?? []) >= 2 && ($status['lkp_lulus'] ?? false))
                     <span class="status-badge status-open mb-3">
                         <i class="fas fa-unlock"></i> Terbuka
                     </span>
@@ -980,8 +980,8 @@
                         <li class="{{ count($pembimbing ?? []) >= 2 ? 'checked' : '' }}">
                             <i class="fas fa-circle"></i> 2 Dosen Pembimbing
                         </li>
-                        <li class="{{ $status['lkp'] ?? false ? 'checked' : '' }}">
-                            <i class="fas fa-circle"></i> Lulus Seminar LKP
+                        <li class="{{ $status['lkp_lulus'] ?? false ? 'checked' : '' }}">
+                            <i class="fas fa-circle"></i> Lulus Seminar LKP (nilai sudah diinput &amp; bukan E)
                         </li>
                     </ul>
                 </div>
@@ -996,7 +996,7 @@
                 <button class="btn btn-action btn-secondary-custom" 
                         data-bs-toggle="modal" 
                         data-bs-target="#daftarProposalModal"
-                        {{ !(count($pembimbing ?? []) >= 2 && ($status['lkp'] ?? false)) ? 'disabled' : '' }}>
+                        {{ ($status['proposal'] ?? false) || !(count($pembimbing ?? []) >= 2 && ($status['lkp_lulus'] ?? false)) ? 'disabled' : '' }}>
                     <i class="fas fa-paper-plane"></i> 
                     {{ $status['proposal'] ?? false ? 'Sudah Daftar' : 'Daftar Sekarang' }}
                 </button>
@@ -1013,22 +1013,26 @@
                 </div>
                 
                 @if($status['sidang'] ?? false)
-                    @if($sidang->kaprodi_approved ?? false)
+                    @if($sidang->kaprodi_rejected ?? false)
+                        <span class="status-badge status-closed mb-3">
+                            <i class="fas fa-times-circle"></i> Ditolak Kaprodi
+                        </span>
+                    @elseif($sidang->kaprodi_approved ?? false)
                         <span class="status-badge status-completed mb-3">
                             <i class="fas fa-check-circle"></i> Lulus
                         </span>
-                    @elseif($sidang->admin_verified ?? false)
+                    @else
                         <span class="status-badge status-pending mb-3">
                             <i class="fas fa-hourglass-half"></i> Menunggu Persetujuan Kaprodi
                         </span>
-                    @else
-                        <span class="status-badge status-pending mb-3">
-                            <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi
-                        </span>
                     @endif
-                @elseif($status['proposal'] ?? false)
+                @elseif($status['proposal_lulus'] ?? false)
                     <span class="status-badge status-open mb-3">
                         <i class="fas fa-unlock"></i> Terbuka
+                    </span>
+                @elseif($status['proposal'] ?? false)
+                    <span class="status-badge status-pending mb-3">
+                        <i class="fas fa-hourglass-half"></i> Menunggu Nilai Proposal
                     </span>
                 @else
                     <span class="status-badge status-closed mb-3">
@@ -1038,14 +1042,23 @@
                 
                 <div class="requirements" style="margin: 0 0 1rem 0; padding: 0.75rem 1rem;">
                     <ul>
-                        <li class="{{ $status['proposal'] ?? false ? 'checked' : '' }}">
+                        <li class="{{ $status['proposal_lulus'] ?? false ? 'checked' : '' }}">
                             <i class="fas fa-circle"></i> Lulus Seminar Proposal
                         </li>
-                        <li class="{{ $status['proposal'] ?? false ? 'checked' : '' }}">
+                        <li class="{{ $status['sidang'] ?? false ? 'checked' : '' }}">
                             <i class="fas fa-circle"></i> Skripsi Lengkap
                         </li>
                     </ul>
                 </div>
+
+                @if(($status['sidang_ditolak'] ?? false))
+                    <div class="alert alert-danger py-2 px-3 mb-3" style="border-radius: 10px; font-size: 0.85rem;">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        <strong>Ditolak Kaprodi.</strong>
+                        {{ $sidang->catatan_kaprodi ?: 'Tidak ada catatan.' }}
+                        <br>Silakan perbaiki berkas lalu kirim ulang.
+                    </div>
+                @endif
 
                 @if(($status['sidang'] ?? false) && ($sidang->tanggal_sidang ?? false))
                     <div class="alert alert-success py-2 px-3 mb-3" style="border-radius: 10px; font-size: 0.85rem;">
@@ -1057,9 +1070,15 @@
                 <button class="btn btn-action btn-primary-custom" 
                         data-bs-toggle="modal" 
                         data-bs-target="#daftarSidangModal"
-                        {{ !($status['proposal'] ?? false) ? 'disabled' : '' }}>
+                        {{ (!($status['proposal_lulus'] ?? false) || (($status['sidang'] ?? false) && !($status['sidang_ditolak'] ?? false))) ? 'disabled' : '' }}>
                     <i class="fas fa-paper-plane"></i> 
-                    {{ $status['sidang'] ?? false ? 'Sudah Daftar' : 'Daftar Sekarang' }}
+                    @if($status['sidang_ditolak'] ?? false)
+                        Kirim Ulang Berkas
+                    @elseif($status['sidang'] ?? false)
+                        Sudah Daftar
+                    @else
+                        Daftar Sekarang
+                    @endif
                 </button>
             </div>
 
@@ -1256,7 +1275,7 @@
                                         <span class="input-group-text bg-light">
                                             <i class="fas fa-fingerprint text-muted"></i>
                                         </span>
-                                        <input type="text" class="form-control @error('nik_ktp') is-invalid @enderror" name="nik_ktp" value="{{ old('nik_ktp') }}" placeholder="16 digit NIK" required style="border-radius: 0 10px 10px 0;">
+                                        <input type="text" class="form-control @error('nik_ktp') is-invalid @enderror" name="nik_ktp" value="{{ old('nik_ktp') }}" placeholder="16 digit NIK" inputmode="numeric" maxlength="16" pattern="[0-9]{16}" required style="border-radius: 0 10px 10px 0;">
                                     </div>
                                     @error('nik_ktp')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                                 </div>
@@ -1769,12 +1788,18 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">📝 Pendaftaran Sidang Skripsi</h5>
+                    <h5 class="modal-title">📝 {{ ($status['sidang_ditolak'] ?? false) ? 'Kirim Ulang Berkas Sidang Skripsi' : 'Pendaftaran Sidang Skripsi' }}</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{{ route('sidang.daftar') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        @if($status['sidang_ditolak'] ?? false)
+                            <div class="alert alert-danger" style="font-size: 0.9rem;">
+                                <strong>Catatan Kaprodi:</strong> {{ $sidang->catatan_kaprodi ?: 'Tidak ada catatan.' }}<br>
+                                Upload ulang kedua berkas setelah diperbaiki.
+                            </div>
+                        @endif
                         <div class="mb-3">
                             <label class="form-label">NIM</label>
                             <input type="text" class="form-control" value="{{ $mahasiswa->nim ?? '-' }}" readonly>
@@ -1797,8 +1822,8 @@
                             @error('skripsi')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Upload Surat Bebas Pustaka</label>
-                            <input type="file" class="form-control @error('bebas_pustaka') is-invalid @enderror" name="bebas_pustaka" accept=".pdf,.jpg,.png" required>
+                            <label class="form-label">Upload Foto Pengesahan untuk Sidang Skripsi</label>
+                            <input type="file" class="form-control @error('bebas_pustaka') is-invalid @enderror" name="bebas_pustaka" accept=".jpg,.jpeg,.png,.pdf" required>
                             @error('bebas_pustaka')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="d-grid">

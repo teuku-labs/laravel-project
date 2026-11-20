@@ -34,6 +34,18 @@ class KaprodiController extends Controller
         return Dosen::where('user_id', Auth::id())->first();
     }
 
+    /**
+     * ID baris milik akun ini di tabel `dosen`.
+     * Kolom pengajuan_pembimbings.dosen_id, mahasiswa.pembimbing1_id/pembimbing2_id
+     * dan jadwal.dosen_id semuanya merujuk ke dosen.id, BUKAN users.id.
+     * Mengembalikan 0 kalau akun belum punya baris dosen, supaya query tidak
+     * pernah cocok dengan data (where(..., null) akan berubah jadi IS NULL).
+     */
+    private function dosenId(): int
+    {
+        return (int) ($this->getDosenSaya()->id ?? 0);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | DASHBOARD
@@ -58,14 +70,14 @@ class KaprodiController extends Controller
                         ->latest()->take(5)->get();
 
         // ✅ Fitur Dosen Pembimbing — pengajuan bimbingan ke Kaprodi
-        $pengajuanBimbingan = PengajuanPembimbing::where('dosen_id', $kaprodi->user_id)
+        $pengajuanBimbingan = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                                 ->where('status', 'pending')
                                 ->with('mahasiswa.prodi')
                                 ->get();
 
         // Mahasiswa yang Kaprodi jadi pembimbing (via user_id mapping ke dosen)
-        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $kaprodi->user_id)
-                                ->orWhere('pembimbing2_id', $kaprodi->user_id)
+        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $this->dosenId())
+                                ->orWhere('pembimbing2_id', $this->dosenId())
                                 ->count();
 
         return view('kaprodi.dashboard', compact(
@@ -184,6 +196,117 @@ class KaprodiController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | SEMINAR PROPOSAL — penjadwalan
+    | Hanya proposal yang sudah diverifikasi admin yang tampil di Kaprodi.
+    |--------------------------------------------------------------------------
+    */
+    public function proposalIndex()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $proposalList = Proposal::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+                        ->with(['mahasiswa', 'pembimbing1'])->latest()->get();
+
+        return view('kaprodi.proposal', compact('kaprodi', 'proposalList'));
+    }
+
+    public function proposalShow($id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $proposal = Proposal::with(['mahasiswa.prodi', 'pembimbing1', 'penguji1', 'penguji2'])
+            ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        // Calon pembahas/penguji: dosen satu prodi, bukan pembimbing 1/2 mahasiswa ini
+        $dosenList = Dosen::where('prodi_id', $kaprodi->prodi_id)
+            ->whereNotIn('id', array_filter([$proposal->pembimbing1_id, $proposal->mahasiswa->pembimbing2_id]))
+            ->orderBy('nama')->get();
+
+        return view('kaprodi.proposal-show', compact('kaprodi', 'proposal', 'dosenList'));
+    }
+
+    public function proposalUpdatePenguji(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $request->validate([
+            'penguji1_id' => 'required|exists:dosen,id',
+            'penguji2_id' => 'required|exists:dosen,id|different:penguji1_id',
+        ], [
+            'penguji1_id.required'  => 'Dosen pembahas/penguji 1 wajib dipilih.',
+            'penguji2_id.required'  => 'Dosen pembahas/penguji 2 wajib dipilih.',
+            'penguji2_id.different' => 'Dosen pembahas/penguji 1 dan 2 harus dua dosen yang berbeda.',
+        ]);
+
+        $proposal = Proposal::with('mahasiswa')
+            ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        $ids = [(int) $request->penguji1_id, (int) $request->penguji2_id];
+
+        // Keduanya harus dosen dari prodi yang sama
+        if (Dosen::where('prodi_id', $kaprodi->prodi_id)->whereIn('id', $ids)->count() !== 2) {
+            return back()->withErrors(['penguji1_id' => 'Dosen pembahas/penguji harus berasal dari prodi yang sama.']);
+        }
+
+        // Pembahas/penguji tidak boleh merangkap pembimbing mahasiswa ini
+        $pembimbing = array_filter([$proposal->pembimbing1_id, $proposal->mahasiswa->pembimbing2_id]);
+        if (array_intersect($ids, $pembimbing)) {
+            return back()->withErrors(['penguji1_id' => 'Dosen pembahas/penguji tidak boleh sama dengan dosen pembimbing.']);
+        }
+
+        $proposal->update([
+            'penguji1_id' => $ids[0],
+            'penguji2_id' => $ids[1],
+        ]);
+
+        return back()->with('success', 'Dosen pembahas/penguji seminar proposal berhasil ditetapkan.');
+    }
+
+    public function proposalJadwal(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $request->validate([
+            'tanggal_seminar' => 'required|date|after:today',
+            'waktu'           => 'required|date_format:H:i',
+            'ruang'           => 'required|string|max:50',
+        ]);
+
+        $proposal = Proposal::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        if (empty($proposal->pembimbing1_id)) {
+            return back()->withErrors(['tanggal_seminar' => 'Proposal ini belum memiliki Dosen Pembimbing 1, jadwal belum bisa ditetapkan.']);
+        }
+
+        // Waktu selesai otomatis: 1 jam 30 menit setelah waktu mulai
+        $waktuSelesai = \Carbon\Carbon::createFromFormat('H:i', $request->waktu)->addMinutes(90)->format('H:i');
+
+        Jadwal::updateOrCreate(
+            ['mahasiswa_id' => $proposal->mahasiswa_id, 'jenis' => 'proposal'],
+            [
+                'dosen_id'      => $proposal->pembimbing1_id,
+                'tanggal'       => $request->tanggal_seminar,
+                'waktu'         => $request->waktu,
+                'waktu_selesai' => $waktuSelesai,
+                'ruang'         => $request->ruang,
+                'jenis'         => 'proposal',
+            ]
+        );
+
+        $proposal->update(['tanggal_seminar' => $request->tanggal_seminar]);
+
+        return back()->with('success', 'Jadwal seminar proposal berhasil ditetapkan.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | NILAI SEMINAR LKP
     |--------------------------------------------------------------------------
     */
@@ -274,9 +397,9 @@ class KaprodiController extends Controller
         $proposal = Proposal::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
             ->findOrFail($id);
 
-        $berhak = $dosenSaya && ($proposal->pembimbing1_id == $dosenSaya->id);
+        $berhak = $proposal->bolehDinilaiOleh($dosenSaya);
         if (!$berhak) {
-            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk proposal yang Anda menjadi pembimbing.']);
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk proposal yang Anda menjadi pembahas/penguji.']);
         }
 
         $request->validate([
@@ -335,9 +458,9 @@ class KaprodiController extends Controller
         $sidang = Sidang::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
             ->findOrFail($id);
 
-        $berhak = $dosenSaya && ($sidang->pembimbing_id == $dosenSaya->id);
+        $berhak = $sidang->bolehDinilaiOleh($dosenSaya);
         if (!$berhak) {
-            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk sidang yang Anda menjadi pembimbing.']);
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk sidang yang Anda menjadi pembahas/penguji.']);
         }
 
         $request->validate([
@@ -445,7 +568,7 @@ class KaprodiController extends Controller
 
         $sidangs = Sidang::with(['mahasiswa', 'pembimbing'])
             ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)->latest()->paginate(15);
+            ->latest()->paginate(15);
 
         return view('kaprodi.sidang.index', compact('kaprodi', 'sidangs'));
     }
@@ -455,11 +578,105 @@ class KaprodiController extends Controller
         $kaprodi = $this->getKaprodi();
         if (!$kaprodi) return redirect()->route('login');
 
-        $sidang = Sidang::with(['mahasiswa.prodi', 'pembimbing'])
+        $sidang = Sidang::with(['mahasiswa.prodi', 'pembimbing', 'penguji1', 'penguji2'])
             ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)->findOrFail($id);
+            ->findOrFail($id);
 
-        return view('kaprodi.sidang.show', compact('kaprodi', 'sidang'));
+        // Calon pembahas/penguji: dosen satu prodi, bukan pembimbing 1/2 mahasiswa ini
+        $dosenList = Dosen::where('prodi_id', $kaprodi->prodi_id)
+            ->whereNotIn('id', array_filter([$sidang->pembimbing_id, $sidang->mahasiswa->pembimbing2_id]))
+            ->orderBy('nama')->get();
+
+        // Jadwal sidang (tanggal, waktu, ruang) yang sudah ditetapkan, kalau ada
+        $jadwal = Jadwal::where('mahasiswa_id', $sidang->mahasiswa_id)
+            ->where('jenis', 'sidang')->first();
+
+        return view('kaprodi.sidang.show', compact('kaprodi', 'sidang', 'dosenList', 'jadwal'));
+    }
+
+    public function sidangUpdatePenguji(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $request->validate([
+            'penguji1_id' => 'required|exists:dosen,id',
+            'penguji2_id' => 'required|exists:dosen,id|different:penguji1_id',
+        ], [
+            'penguji1_id.required'  => 'Dosen pembahas/penguji 1 wajib dipilih.',
+            'penguji2_id.required'  => 'Dosen pembahas/penguji 2 wajib dipilih.',
+            'penguji2_id.different' => 'Dosen pembahas/penguji 1 dan 2 harus dua dosen yang berbeda.',
+        ]);
+
+        $sidang = Sidang::with('mahasiswa')
+            ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        if (!$sidang->kaprodi_approved) {
+            return back()->withErrors(['penguji1_id' => 'Setujui pengajuan sidang terlebih dahulu sebelum menentukan dosen pembahas/penguji.']);
+        }
+
+        $ids = [(int) $request->penguji1_id, (int) $request->penguji2_id];
+
+        // Keduanya harus dosen dari prodi yang sama
+        if (Dosen::where('prodi_id', $kaprodi->prodi_id)->whereIn('id', $ids)->count() !== 2) {
+            return back()->withErrors(['penguji1_id' => 'Dosen pembahas/penguji harus berasal dari prodi yang sama.']);
+        }
+
+        // Pembahas/penguji tidak boleh merangkap pembimbing mahasiswa ini
+        $pembimbing = array_filter([$sidang->pembimbing_id, $sidang->mahasiswa->pembimbing2_id]);
+        if (array_intersect($ids, $pembimbing)) {
+            return back()->withErrors(['penguji1_id' => 'Dosen pembahas/penguji tidak boleh sama dengan dosen pembimbing.']);
+        }
+
+        $sidang->update([
+            'penguji1_id' => $ids[0],
+            'penguji2_id' => $ids[1],
+        ]);
+
+        return back()->with('success', 'Dosen pembahas/penguji sidang skripsi berhasil ditetapkan.');
+    }
+
+    public function sidangJadwal(Request $request, $id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $request->validate([
+            'tanggal_sidang' => 'required|date|after:today',
+            'waktu'          => 'required|date_format:H:i',
+            'ruang'          => 'required|string|max:50',
+        ]);
+
+        $sidang = Sidang::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
+            ->findOrFail($id);
+
+        if (!$sidang->kaprodi_approved) {
+            return back()->withErrors(['tanggal_sidang' => 'Setujui pengajuan sidang terlebih dahulu sebelum menetapkan jadwal.']);
+        }
+
+        if (empty($sidang->pembimbing_id)) {
+            return back()->withErrors(['tanggal_sidang' => 'Sidang ini belum memiliki Dosen Pembimbing, jadwal belum bisa ditetapkan.']);
+        }
+
+        // Waktu selesai otomatis: 1 jam 30 menit setelah waktu mulai
+        $waktuSelesai = \Carbon\Carbon::createFromFormat('H:i', $request->waktu)->addMinutes(90)->format('H:i');
+
+        Jadwal::updateOrCreate(
+            ['mahasiswa_id' => $sidang->mahasiswa_id, 'jenis' => 'sidang'],
+            [
+                'dosen_id'      => $sidang->pembimbing_id,
+                'tanggal'       => $request->tanggal_sidang,
+                'waktu'         => $request->waktu,
+                'waktu_selesai' => $waktuSelesai,
+                'ruang'         => $request->ruang,
+                'jenis'         => 'sidang',
+            ]
+        );
+
+        $sidang->update(['tanggal_sidang' => $request->tanggal_sidang]);
+
+        return back()->with('success', 'Jadwal sidang skripsi berhasil ditetapkan.');
     }
 
     public function sidangApprove($id)
@@ -468,7 +685,7 @@ class KaprodiController extends Controller
         if (!$kaprodi) return redirect()->route('login');
 
         $sidang = Sidang::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)->findOrFail($id);
+            ->findOrFail($id);
 
         $sidang->update(['kaprodi_approved' => true, 'kaprodi_rejected' => false, 'catatan_kaprodi' => null]);
         return back()->with('success', 'Pengajuan Sidang Skripsi berhasil disetujui.');
@@ -482,7 +699,7 @@ class KaprodiController extends Controller
         $request->validate(['catatan_kaprodi' => 'required|string|max:500']);
 
         $sidang = Sidang::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)->findOrFail($id);
+            ->findOrFail($id);
 
         $sidang->update(['kaprodi_rejected' => true, 'kaprodi_approved' => false, 'catatan_kaprodi' => $request->catatan_kaprodi]);
         return back()->with('success', 'Pengajuan Sidang Skripsi ditolak.');
@@ -499,25 +716,27 @@ class KaprodiController extends Controller
         if (!$kaprodi) return redirect()->route('login');
 
         // Pengajuan yang masih pending
-        $pengajuanPending = PengajuanPembimbing::where('dosen_id', $kaprodi->user_id)
+        $pengajuanPending = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                             ->where('status', 'pending')
                             ->with('mahasiswa.prodi')->latest()->get();
 
         // Riwayat yang sudah diproses
-        $riwayatPengajuan = PengajuanPembimbing::where('dosen_id', $kaprodi->user_id)
+        $riwayatPengajuan = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                             ->whereIn('status', ['approved', 'rejected'])
                             ->with('mahasiswa.prodi')->latest()->get();
 
         // Mahasiswa yang sudah dibimbing
-        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $kaprodi->user_id)
-                                ->orWhere('pembimbing2_id', $kaprodi->user_id)
+        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $this->dosenId())
+                                ->orWhere('pembimbing2_id', $this->dosenId())
                                 ->with('prodi')->get();
 
         $mahasiswaCount = $mahasiswaBimbingan->count();
 
+        $dosenId = $this->dosenId();
+
         return view('kaprodi.bimbingan', compact(
             'kaprodi', 'pengajuanPending', 'riwayatPengajuan',
-            'mahasiswaBimbingan', 'mahasiswaCount'
+            'mahasiswaBimbingan', 'mahasiswaCount', 'dosenId'
         ));
     }
 
@@ -525,7 +744,7 @@ class KaprodiController extends Controller
     {
         $kaprodi   = $this->getKaprodi();
         $pengajuan = PengajuanPembimbing::where('id', $id)
-                        ->where('dosen_id', $kaprodi->user_id)->firstOrFail();
+                        ->where('dosen_id', $this->dosenId())->firstOrFail();
 
         if ($pengajuan->status !== 'pending') {
             return back()->with('error', 'Pengajuan ini sudah diproses.');
@@ -535,9 +754,9 @@ class KaprodiController extends Controller
         $jenis     = explode('|', $pengajuan->catatan)[0];
 
         if ($jenis === 'pembimbing1') {
-            $mahasiswa->pembimbing1_id = $kaprodi->user_id;
+            $mahasiswa->pembimbing1_id = $this->dosenId();
         } else {
-            $mahasiswa->pembimbing2_id = $kaprodi->user_id;
+            $mahasiswa->pembimbing2_id = $this->dosenId();
         }
         $mahasiswa->save();
 
@@ -557,7 +776,7 @@ class KaprodiController extends Controller
     {
         $kaprodi   = $this->getKaprodi();
         $pengajuan = PengajuanPembimbing::where('id', $id)
-                        ->where('dosen_id', $kaprodi->user_id)->firstOrFail();
+                        ->where('dosen_id', $this->dosenId())->firstOrFail();
 
         $jenis  = explode('|', $pengajuan->catatan)[0];
         $alasan = $request->alasan ?: 'Tidak ada alasan';
@@ -576,7 +795,7 @@ class KaprodiController extends Controller
         $kaprodi = $this->getKaprodi();
         if (!$kaprodi) return redirect()->route('login');
 
-        $jadwals = Jadwal::where('dosen_id', $kaprodi->user_id)
+        $jadwals = Jadwal::where('dosen_id', $this->dosenId())
                     ->with('mahasiswa')->orderBy('tanggal', 'asc')->get();
 
         return view('kaprodi.jadwal-saya', compact('kaprodi', 'jadwals'));
@@ -592,9 +811,9 @@ class KaprodiController extends Controller
         $kaprodi = $this->getKaprodi();
         if (!$kaprodi) return redirect()->route('login');
 
-        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $kaprodi->user_id)
-                                ->orWhere('pembimbing2_id', $kaprodi->user_id)->count();
-        $pengajuanBaru      = PengajuanPembimbing::where('dosen_id', $kaprodi->user_id)
+        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $this->dosenId())
+                                ->orWhere('pembimbing2_id', $this->dosenId())->count();
+        $pengajuanBaru      = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                                 ->where('status', 'pending')->count();
 
         return view('kaprodi.profile', compact('kaprodi', 'mahasiswaBimbingan', 'pengajuanBaru'));

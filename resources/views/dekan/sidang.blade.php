@@ -58,8 +58,8 @@
 
         <div class="stats-grid">
             <div class="stat-card"><div class="stat-icon" style="background:rgba(225,112,85,.12);color:var(--primary)"><i class="fas fa-gavel"></i></div><div><div class="stat-value">{{ $sidangList->count() }}</div><div class="stat-label">Total Sidang</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(243,156,18,.12);color:#f39c12"><i class="fas fa-clock"></i></div><div><div class="stat-value">{{ $sidangList->where('admin_verified',false)->count() }}</div><div class="stat-label">Belum Verifikasi</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(52,152,219,.12);color:#3498db"><i class="fas fa-check"></i></div><div><div class="stat-value">{{ $sidangList->where('admin_verified',true)->count() }}</div><div class="stat-label">Terverifikasi</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(243,156,18,.12);color:#f39c12"><i class="fas fa-clock"></i></div><div><div class="stat-value">{{ $sidangList->where('kaprodi_approved',false)->where('kaprodi_rejected',false)->count() }}</div><div class="stat-label">Menunggu Kaprodi</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(52,152,219,.12);color:#3498db"><i class="fas fa-check"></i></div><div><div class="stat-value">{{ $sidangList->where('kaprodi_approved',true)->count() }}</div><div class="stat-label">Disetujui Kaprodi</div></div></div>
             <div class="stat-card"><div class="stat-icon" style="background:rgba(39,174,96,.12);color:#27ae60"><i class="fas fa-check-double"></i></div><div><div class="stat-value">{{ $sidangList->where('kaprodi_approved',true)->count() }}</div><div class="stat-label">Disetujui Kaprodi</div></div></div>
         </div>
 
@@ -83,16 +83,14 @@
                             <td style="display:flex;gap:.5rem;flex-wrap:wrap;">
                                 <a href="{{ asset('storage/'.$s->file_draft) }}" target="_blank" class="btn-file"><i class="fas fa-file-pdf"></i> Skripsi</a>
                                 @if($s->file_bebas_pustaka)
-                                <a href="{{ asset('storage/'.$s->file_bebas_pustaka) }}" target="_blank" class="btn-file"><i class="fas fa-file"></i> Bebas Pustaka</a>
+                                <a href="{{ asset('storage/'.$s->file_bebas_pustaka) }}" target="_blank" class="btn-file"><i class="fas fa-image"></i> Foto Pengesahan</a>
                                 @endif
                             </td>
                             <td>
                                 @if($s->kaprodi_approved)
                                     <span class="badge-approved"><i class="fas fa-check-double"></i> Disetujui</span>
-                                @elseif($s->admin_verified)
-                                    <span class="badge-done"><i class="fas fa-check"></i> Terverifikasi</span>
                                 @else
-                                    <span class="badge-pending"><i class="fas fa-clock"></i> Menunggu</span>
+                                    <span class="badge-pending"><i class="fas fa-clock"></i> Menunggu Kaprodi</span>
                                 @endif
                             </td>
                         </tr>

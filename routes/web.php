@@ -77,7 +77,10 @@ Route::middleware('auth')->group(function () {
         // Kelola Sidang
         Route::get('/sidang',               [AdminController::class, 'sidangIndex'])->name('sidang.index');
         Route::get('/sidang/{id}',          [AdminController::class, 'sidangShow'])->name('sidang.show');
-        Route::post('/sidang/{id}/verify',  [AdminController::class, 'sidangVerify'])->name('sidang.verify');
+
+        // Kelola Seminar Proposal
+        Route::get('/proposal',             [AdminController::class, 'proposalIndex'])->name('proposal.index');
+        Route::get('/proposal/{id}',        [AdminController::class, 'proposalShow'])->name('proposal.show');
         
         // Kelola SK Pembimbing
         Route::get('/sk-pembimbing',        [AdminController::class, 'skPembimbingIndex'])->name('sk-pembimbing.index');
@@ -147,6 +150,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/seminar/{id}/jadwal', [KaprodiController::class, 'seminarJadwal'])->name('seminar.jadwal');
         Route::post('/seminar/{id}/pembimbing', [KaprodiController::class, 'seminarUpdatePembimbing'])->name('seminar.pembimbing');
         Route::post('/seminar/{id}/penguji', [KaprodiController::class, 'seminarUpdatePenguji'])->name('seminar.penguji');
+        Route::get('/proposal',              [KaprodiController::class, 'proposalIndex'])->name('proposal.index');
+        Route::get('/proposal/{id}',         [KaprodiController::class, 'proposalShow'])->name('proposal.show');
+        Route::post('/proposal/{id}/jadwal', [KaprodiController::class, 'proposalJadwal'])->name('proposal.jadwal');
+        Route::post('/proposal/{id}/penguji', [KaprodiController::class, 'proposalUpdatePenguji'])->name('proposal.penguji');
         Route::get('/nilai-lkp',                [KaprodiController::class, 'nilaiIndex'])->name('nilai-lkp.index');
         Route::post('/nilai-lkp/{id}',          [KaprodiController::class, 'nilaiStore'])->name('nilai-lkp.store');
         Route::get('/nilai-proposal',            [KaprodiController::class, 'nilaiProposalIndex'])->name('nilai-proposal.index');
@@ -163,6 +170,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/sidang/{id}',           [KaprodiController::class, 'sidangShow'])->name('sidang.show');
         Route::post('/sidang/{id}/approve',  [KaprodiController::class, 'sidangApprove'])->name('sidang.approve');
         Route::post('/sidang/{id}/reject',   [KaprodiController::class, 'sidangReject'])->name('sidang.reject');
+        Route::post('/sidang/{id}/penguji',  [KaprodiController::class, 'sidangUpdatePenguji'])->name('sidang.penguji');
+        Route::post('/sidang/{id}/jadwal',   [KaprodiController::class, 'sidangJadwal'])->name('sidang.jadwal');
 
         Route::get('/bimbingan',                [KaprodiController::class, 'bimbinganIndex'])->name('bimbingan.index');
         Route::post('/bimbingan/{id}/approve',  [KaprodiController::class, 'bimbinganApprove'])->name('bimbingan.approve');

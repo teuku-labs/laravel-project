@@ -39,6 +39,18 @@
         .badge-rejected{background:rgba(231,76,60,.15);color:#c0392b;padding:.4rem 1rem;border-radius:20px;font-size:.83rem;font-weight:500;}
         .badge-pending{background:rgba(243,156,18,.15);color:#d68910;padding:.4rem 1rem;border-radius:20px;font-size:.83rem;font-weight:500;}
         .btn-back{color:var(--primary);text-decoration:none;font-size:.88rem;display:inline-flex;align-items:center;gap:.4rem;margin-bottom:1.25rem;}
+        .detail-grid{align-items:start;}
+        .right-col{display:flex;flex-direction:column;gap:1.5rem;}
+        .btn-jadwal{background:linear-gradient(135deg,var(--primary),var(--dark));border:none;color:white;padding:.75rem 1.5rem;border-radius:10px;font-weight:600;width:100%;font-family:'Poppins',sans-serif;cursor:pointer;transition:all .3s;margin-top:.5rem;}
+        .btn-jadwal:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(108,92,231,.4);}
+        .form-label{font-size:.85rem;font-weight:500;margin-bottom:.4rem;}
+        .time-range{display:flex;align-items:flex-end;gap:.75rem;}
+        .time-box{flex:1;}
+        .time-box-label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:.3rem;}
+        .time-box-readonly{background:var(--light);color:var(--dark);font-weight:600;display:flex;align-items:center;}
+        .time-arrow{color:var(--primary);font-size:.9rem;padding-bottom:.75rem;}
+        .warn-text{color:#d68910;font-weight:500;}
+        @media(max-width:576px){.time-range{flex-direction:column;align-items:stretch;}.time-arrow{display:none;}}
         @media(max-width:992px){.sidebar{transform:translateX(-100%)}.sidebar.show{transform:translateX(0)}.main{margin-left:0}.detail-grid{grid-template-columns:1fr}}
     </style>
 </head>
@@ -102,7 +114,7 @@
                     </span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">Bebas Pustaka</span>
+                    <span class="info-label">Foto Pengesahan</span>
                     <span class="info-value">
                         @if($sidang->file_bebas_pustaka)
                             <a href="{{ asset('storage/'.$sidang->file_bebas_pustaka) }}" target="_blank" class="file-link"><i class="fas fa-file-alt"></i> Lihat File</a>
@@ -123,6 +135,7 @@
                 </div>
             </div>
 
+            <div class="right-col">
             {{-- Aksi Kaprodi --}}
             <div class="card-box">
                 <h5><i class="fas fa-gavel"></i> Keputusan Kaprodi</h5>
@@ -166,11 +179,147 @@
                     </div>
                 @endif
             </div>
+
+            @if($sidang->kaprodi_approved)
+            {{-- Dosen Pembahas/Penguji (2 dosen) --}}
+            <div class="card-box">
+                <h5><i class="fas fa-user-tie"></i> Dosen Pembahas/Penguji</h5>
+                <div class="info-row">
+                    <span class="info-label">Pembahas/Penguji 1</span>
+                    <span class="info-value">
+                        @if($sidang->penguji1)
+                            {{ $sidang->penguji1->nama }}
+                        @else
+                            <span class="warn-text"><i class="fas fa-exclamation-circle"></i> Belum ditentukan</span>
+                        @endif
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pembahas/Penguji 2</span>
+                    <span class="info-value">
+                        @if($sidang->penguji2)
+                            {{ $sidang->penguji2->nama }}
+                        @else
+                            <span class="warn-text"><i class="fas fa-exclamation-circle"></i> Belum ditentukan</span>
+                        @endif
+                    </span>
+                </div>
+                <button type="button" class="btn-jadwal" style="width:auto;margin-top:.75rem;padding:.5rem 1.25rem;" data-bs-toggle="modal" data-bs-target="#editPengujiModal">
+                    <i class="fas fa-pen"></i> {{ ($sidang->penguji1_id && $sidang->penguji2_id) ? 'Ubah' : 'Tentukan' }} Dosen Pembahas/Penguji
+                </button>
+                <p style="font-size:.8rem;color:var(--muted);margin-top:.75rem;margin-bottom:0;">Dosen pembahas/penguji otomatis mengikuti pembahas seminar proposal mahasiswa ini. Hanya kaprodi yang dapat mengubahnya. Keduanya bertugas menguji saat sidang skripsi, terpisah dari dosen pembimbing.</p>
+            </div>
+
+            {{-- Jadwal Sidang --}}
+            <div class="card-box">
+                <h5><i class="fas fa-calendar-plus"></i> {{ $jadwal ? 'Jadwal Sidang Skripsi' : 'Tetapkan Jadwal Sidang Skripsi' }}</h5>
+
+                @if($jadwal)
+                    <div class="info-row"><span class="info-label">Tanggal</span><span class="info-value">{{ \Carbon\Carbon::parse($jadwal->tanggal)->format('d M Y') }}</span></div>
+                    <div class="info-row"><span class="info-label">Waktu</span><span class="info-value">{{ $jadwal->waktu }}{{ $jadwal->waktu_selesai ? ' - '.$jadwal->waktu_selesai : '' }} WIB</span></div>
+                    <div class="info-row"><span class="info-label">Ruang</span><span class="info-value">{{ $jadwal->ruang }}</span></div>
+                    <button type="button" class="btn-jadwal" style="width:auto;margin-top:.25rem;padding:.5rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#formJadwal">
+                        <i class="fas fa-pen"></i> Ubah Jadwal
+                    </button>
+                @endif
+
+                <div id="formJadwal" class="{{ $jadwal ? 'collapse' : '' }}" style="{{ $jadwal ? 'margin-top:1rem;' : '' }}">
+                    <form action="{{ route('kaprodi.sidang.jadwal', $sidang->id) }}" method="POST">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label">Tanggal Sidang <span style="color:red">*</span></label>
+                            <input type="date" name="tanggal_sidang" class="form-control" min="{{ date('Y-m-d', strtotime('+1 day')) }}" value="{{ old('tanggal_sidang') }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Waktu <span style="color:red">*</span></label>
+                            <div class="time-range">
+                                <div class="time-box">
+                                    <span class="time-box-label">Mulai</span>
+                                    <input type="time" name="waktu" id="waktuMulai" class="form-control" value="{{ old('waktu') }}" required oninput="hitungWaktuSelesai()">
+                                </div>
+                                <div class="time-arrow"><i class="fas fa-arrow-right"></i></div>
+                                <div class="time-box">
+                                    <span class="time-box-label">Selesai</span>
+                                    <div class="form-control time-box-readonly" id="waktuSelesaiInfo">--:--</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Ruang <span style="color:red">*</span></label>
+                            <select name="ruang" class="form-control" required>
+                                <option value="" disabled {{ old('ruang') ? '' : 'selected' }}>Pilih ruang</option>
+                                @foreach(['Seminar Lab. Kom. 1', 'Seminar Lab. Kom. 2', 'Seminar Lab. Mesin', 'Seminar Fakultas Teknik'] as $r)
+                                    <option value="{{ $r }}" {{ old('ruang') == $r ? 'selected' : '' }}>{{ $r }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-jadwal"><i class="fas fa-calendar-check"></i> {{ $jadwal ? 'Simpan Perubahan Jadwal' : 'Tetapkan Jadwal' }}</button>
+                    </form>
+                </div>
+            </div>
+            @endif
+            </div>{{-- /.right-col --}}
         </div>
     </div>
 </div>
 
+@if($sidang->kaprodi_approved)
+{{-- Modal: Tentukan Dosen Pembahas/Penguji --}}
+<div class="modal fade" id="editPengujiModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:16px;border:none;">
+            <form action="{{ route('kaprodi.sidang.penguji', $sidang->id) }}" method="POST">
+                @csrf
+                <div class="modal-header" style="border-bottom:2px solid var(--light);">
+                    <h5 class="modal-title" style="color:var(--primary);font-weight:600;"><i class="fas fa-user-tie"></i> Tentukan Dosen Pembahas/Penguji</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Pembahas/Penguji 1 <span style="color:red">*</span></label>
+                        <select name="penguji1_id" class="form-control" required>
+                            <option value="" disabled {{ !$sidang->penguji1_id ? 'selected' : '' }}>Pilih dosen</option>
+                            @foreach($dosenList as $d)
+                                <option value="{{ $d->id }}" {{ $sidang->penguji1_id == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Pembahas/Penguji 2 <span style="color:red">*</span></label>
+                        <select name="penguji2_id" class="form-control" required>
+                            <option value="" disabled {{ !$sidang->penguji2_id ? 'selected' : '' }}>Pilih dosen</option>
+                            @foreach($dosenList as $d)
+                                <option value="{{ $d->id }}" {{ $sidang->penguji2_id == $d->id ? 'selected' : '' }}>{{ $d->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <small style="color:var(--muted);">Harus dua dosen berbeda dan tidak boleh sama dengan dosen pembimbing.</small>
+                </div>
+                <div class="modal-footer" style="border-top:none;">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn-jadwal" style="width:auto;margin-top:0;padding:.6rem 1.5rem;"><i class="fas fa-save"></i> Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>document.getElementById('sidebarToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('show'));</script>
+<script>
+    function hitungWaktuSelesai(){
+        const input = document.getElementById('waktuMulai');
+        const info = document.getElementById('waktuSelesaiInfo');
+        if(!input || !info) return;
+        if(!input.value){ info.textContent = '--:--'; return; }
+        const [jam, menit] = input.value.split(':').map(Number);
+        const mulai = new Date();
+        mulai.setHours(jam, menit, 0, 0);
+        mulai.setMinutes(mulai.getMinutes() + 90); // +1 jam 30 menit
+        info.textContent = String(mulai.getHours()).padStart(2,'0') + ':' + String(mulai.getMinutes()).padStart(2,'0');
+    }
+    hitungWaktuSelesai();
+</script>
 </body>
 </html>

@@ -5,6 +5,7 @@
         <a href="{{ route('kaprodi.dashboard') }}" class="menu-item {{ request()->routeIs('kaprodi.dashboard') ? 'active' : '' }}"><i class="fas fa-home"></i>Dashboard</a>
         <a href="{{ route('kaprodi.bimbingan.index') }}" class="menu-item {{ request()->routeIs('kaprodi.bimbingan.*') ? 'active' : '' }}"><i class="fas fa-chalkboard-teacher"></i>Bimbingan</a>
         <a href="{{ route('kaprodi.seminar') }}" class="menu-item {{ request()->routeIs('kaprodi.seminar') ? 'active' : '' }}"><i class="fas fa-clipboard-list"></i>Seminar LKP</a>
+        <a href="{{ route('kaprodi.proposal.index') }}" class="menu-item {{ request()->routeIs('kaprodi.proposal.*') ? 'active' : '' }}"><i class="fas fa-file-alt"></i>Seminar Proposal</a>
         <a href="{{ route('kaprodi.sidang.index') }}" class="menu-item {{ request()->routeIs('kaprodi.sidang.*') ? 'active' : '' }}"><i class="fas fa-gavel"></i>Sidang</a>
         <a href="{{ route('kaprodi.jadwal-saya') }}" class="menu-item {{ request()->routeIs('kaprodi.jadwal-saya') ? 'active' : '' }}"><i class="fas fa-calendar-alt"></i>Jadwal Saya</a>
         <a href="{{ route('kaprodi.nilai-lkp.index') }}" class="menu-item {{ request()->routeIs('kaprodi.nilai-lkp.*') ? 'active' : '' }}"><i class="fas fa-star-half-alt"></i>Nilai Seminar LKP</a>

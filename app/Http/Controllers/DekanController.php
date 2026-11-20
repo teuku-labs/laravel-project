@@ -40,6 +40,18 @@ class DekanController extends Controller
         return Dosen::where('user_id', Auth::id())->first();
     }
 
+    /**
+     * ID baris milik akun ini di tabel `dosen`.
+     * Kolom pengajuan_pembimbings.dosen_id, mahasiswa.pembimbing1_id/pembimbing2_id
+     * dan jadwal.dosen_id semuanya merujuk ke dosen.id, BUKAN users.id.
+     * Mengembalikan 0 kalau akun belum punya baris dosen, supaya query tidak
+     * pernah cocok dengan data (where(..., null) akan berubah jadi IS NULL).
+     */
+    private function dosenId(): int
+    {
+        return (int) ($this->getDosenSaya()->id ?? 0);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | DASHBOARD
@@ -64,12 +76,12 @@ class DekanController extends Controller
                             ->take(5)->get();
 
         // ✅ Fitur Dosen Pembimbing
-        $pengajuanBimbingan = PengajuanPembimbing::where('dosen_id', $dekan->user_id)
+        $pengajuanBimbingan = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                                 ->where('status', 'pending')
                                 ->with('mahasiswa.prodi')->get();
 
-        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $dekan->user_id)
-                                ->orWhere('pembimbing2_id', $dekan->user_id)->count();
+        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $this->dosenId())
+                                ->orWhere('pembimbing2_id', $this->dosenId())->count();
 
         return view('dekan.dashboard', compact(
             'dekan', 'totalMahasiswa', 'totalSeminar',
@@ -107,7 +119,7 @@ class DekanController extends Controller
         $seminarList = SeminarLkp::with(['mahasiswa', 'dosen', 'penguji', 'nilai'])
             ->latest()->get();
 
-        return view('dekan.nilai', compact('dekan', 'seminarList', 'dosenSaya'));
+        return view('dekan.nilai-lkp', compact('dekan', 'seminarList', 'dosenSaya'));
     }
 
     public function nilaiStore(Request $request, $id)
@@ -179,9 +191,9 @@ class DekanController extends Controller
 
         $proposal = Proposal::findOrFail($id);
 
-        $berhak = $dosenSaya && ($proposal->pembimbing1_id == $dosenSaya->id);
+        $berhak = $proposal->bolehDinilaiOleh($dosenSaya);
         if (!$berhak) {
-            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk proposal yang Anda menjadi pembimbing.']);
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk proposal yang Anda menjadi pembahas/penguji.']);
         }
 
         $request->validate([
@@ -237,9 +249,9 @@ class DekanController extends Controller
 
         $sidang = Sidang::findOrFail($id);
 
-        $berhak = $dosenSaya && ($sidang->pembimbing_id == $dosenSaya->id);
+        $berhak = $sidang->bolehDinilaiOleh($dosenSaya);
         if (!$berhak) {
-            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk sidang yang Anda menjadi pembimbing.']);
+            return back()->withErrors(['nilai' => 'Anda hanya bisa memberi nilai untuk sidang yang Anda menjadi pembahas/penguji.']);
         }
 
         $request->validate([
@@ -321,23 +333,25 @@ class DekanController extends Controller
         $dekan = $this->getDekan();
         if (!$dekan) return redirect()->route('login');
 
-        $pengajuanPending = PengajuanPembimbing::where('dosen_id', $dekan->user_id)
+        $pengajuanPending = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                             ->where('status', 'pending')
                             ->with('mahasiswa.prodi')->latest()->get();
 
-        $riwayatPengajuan = PengajuanPembimbing::where('dosen_id', $dekan->user_id)
+        $riwayatPengajuan = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                             ->whereIn('status', ['approved', 'rejected'])
                             ->with('mahasiswa.prodi')->latest()->get();
 
-        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $dekan->user_id)
-                                ->orWhere('pembimbing2_id', $dekan->user_id)
+        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $this->dosenId())
+                                ->orWhere('pembimbing2_id', $this->dosenId())
                                 ->with('prodi')->get();
 
         $mahasiswaCount = $mahasiswaBimbingan->count();
 
+        $dosenId = $this->dosenId();
+
         return view('dekan.bimbingan', compact(
             'dekan', 'pengajuanPending', 'riwayatPengajuan',
-            'mahasiswaBimbingan', 'mahasiswaCount'
+            'mahasiswaBimbingan', 'mahasiswaCount', 'dosenId'
         ));
     }
 
@@ -345,7 +359,7 @@ class DekanController extends Controller
     {
         $dekan     = $this->getDekan();
         $pengajuan = PengajuanPembimbing::where('id', $id)
-                        ->where('dosen_id', $dekan->user_id)->firstOrFail();
+                        ->where('dosen_id', $this->dosenId())->firstOrFail();
 
         if ($pengajuan->status !== 'pending') {
             return back()->with('error', 'Pengajuan ini sudah diproses.');
@@ -355,9 +369,9 @@ class DekanController extends Controller
         $jenis     = explode('|', $pengajuan->catatan)[0];
 
         if ($jenis === 'pembimbing1') {
-            $mahasiswa->pembimbing1_id = $dekan->user_id;
+            $mahasiswa->pembimbing1_id = $this->dosenId();
         } else {
-            $mahasiswa->pembimbing2_id = $dekan->user_id;
+            $mahasiswa->pembimbing2_id = $this->dosenId();
         }
         $mahasiswa->save();
 
@@ -376,7 +390,7 @@ class DekanController extends Controller
     {
         $dekan     = $this->getDekan();
         $pengajuan = PengajuanPembimbing::where('id', $id)
-                        ->where('dosen_id', $dekan->user_id)->firstOrFail();
+                        ->where('dosen_id', $this->dosenId())->firstOrFail();
 
         $jenis  = explode('|', $pengajuan->catatan)[0];
         $alasan = $request->alasan ?: 'Tidak ada alasan';
@@ -395,7 +409,7 @@ class DekanController extends Controller
         $dekan = $this->getDekan();
         if (!$dekan) return redirect()->route('login');
 
-        $jadwals = Jadwal::where('dosen_id', $dekan->user_id)
+        $jadwals = Jadwal::where('dosen_id', $this->dosenId())
                     ->with('mahasiswa')->orderBy('tanggal', 'asc')->get();
 
         return view('dekan.jadwal-saya', compact('dekan', 'jadwals'));
@@ -411,9 +425,9 @@ class DekanController extends Controller
         $dekan = $this->getDekan();
         if (!$dekan) return redirect()->route('login');
 
-        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $dekan->user_id)
-                                ->orWhere('pembimbing2_id', $dekan->user_id)->count();
-        $pengajuanBaru      = PengajuanPembimbing::where('dosen_id', $dekan->user_id)
+        $mahasiswaBimbingan = Mahasiswa::where('pembimbing1_id', $this->dosenId())
+                                ->orWhere('pembimbing2_id', $this->dosenId())->count();
+        $pengajuanBaru      = PengajuanPembimbing::where('dosen_id', $this->dosenId())
                                 ->where('status', 'pending')->count();
 
         return view('dekan.profile', compact('dekan', 'mahasiswaBimbingan', 'pengajuanBaru'));

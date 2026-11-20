@@ -754,6 +754,14 @@
                 @endif
             </a>
             
+            <a href="{{ route('admin.proposal.index') }}" class="menu-item {{ request()->routeIs('admin.proposal.*') ? 'active' : '' }}">
+                <i class="fas fa-file-alt"></i>
+                <span>Pengajuan Proposal</span>
+                @if(($pendingProposal ?? 0) > 0)
+                    <span class="badge">{{ $pendingProposal }}</span>
+                @endif
+            </a>
+            
             <a href="{{ route('admin.sidang.index') }}" class="menu-item {{ request()->routeIs('admin.sidang.*') ? 'active' : '' }}">
                 <i class="fas fa-graduation-cap"></i>
                 <span>Pengajuan Sidang</span>

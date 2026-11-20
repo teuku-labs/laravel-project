@@ -17,8 +17,8 @@ class MahasiswaController extends Controller
         $user      = Auth::user();
         $mahasiswa = Mahasiswa::with([
             'prodi', 'pembimbing1', 'pembimbing2',
-            'pembimbingLkp', 'seminarLkp.dosen',
-            'proposal', 'sidang', 'pengajuanSk',
+            'pembimbingLkp', 'seminarLkp.dosen', 'seminarLkp.nilai',
+            'proposal.nilai', 'sidang', 'pengajuanSk',
             'pengajuanPembimbing.dosen',
         ])->where('user_id', $user->id)->firstOrFail();
 
@@ -37,8 +37,12 @@ class MahasiswaController extends Controller
         // Status pendaftaran
         $status = [
             'lkp'      => (bool) $lkp,
+            'lkp_lulus' => $lkp ? $lkp->lulus() : false,
             'proposal' => (bool) $proposal,
+            'proposal_lulus' => $proposal ? $proposal->lulus() : false,
             'sidang'   => (bool) $sidang,
+            // Sidang ditolak kaprodi -> mahasiswa boleh mengirim ulang berkas
+            'sidang_ditolak' => $sidang ? (bool) $sidang->kaprodi_rejected : false,
         ];
 
         // Status pengajuan pembimbing yang sedang pending

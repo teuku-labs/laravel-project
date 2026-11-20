@@ -12,7 +12,7 @@
     </div>
     <div class="stat-card warning">
         <div class="stat-icon"><i class="fas fa-clock"></i></div>
-        <div class="stat-content"><div class="label">Belum Diverifikasi</div><div class="value">{{ $belumVerifikasi }}</div></div>
+        <div class="stat-content"><div class="label">Menunggu Kaprodi</div><div class="value">{{ $menungguKaprodi }}</div></div>
     </div>
     <div class="stat-card info">
         <div class="stat-icon"><i class="fas fa-check-double"></i></div>
@@ -62,13 +62,11 @@
                     <td>
                         @if($s->kaprodi_approved)
                             <span class="status-badge status-approved"><i class="fas fa-check-double"></i> Disetujui Kaprodi</span>
-                        @elseif($s->admin_verified)
-                            <span class="status-badge status-editing"><i class="fas fa-paper-plane"></i> Menunggu Kaprodi</span>
                         @else
-                            <span class="status-badge status-pending"><i class="fas fa-clock"></i> Menunggu Verifikasi Admin</span>
+                            <span class="status-badge status-editing"><i class="fas fa-paper-plane"></i> Menunggu Kaprodi</span>
                         @endif
                     </td>
-                    <td><a href="{{ route('admin.sidang.show', $s->id) }}" class="action-btn view" title="Detail / Verifikasi"><i class="fas fa-eye"></i></a></td>
+                    <td><a href="{{ route('admin.sidang.show', $s->id) }}" class="action-btn view" title="Detail"><i class="fas fa-eye"></i></a></td>
                 </tr>
                 @empty
                 <tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>Tidak ada data</td></tr>

@@ -85,7 +85,7 @@
                     <strong style="font-size:1rem;">Input &amp; Nilai Seminar Proposal</strong>
                     <p style="color:var(--muted);font-size:.83rem;margin:0;">
                         Total: {{ $proposalList->count() }} mahasiswa &middot;
-                        Anda hanya bisa mengisi nilai untuk proposal yang Anda menjadi pembimbing.
+                        Anda hanya bisa mengisi nilai untuk proposal yang Anda menjadi pembahas/penguji.
                     </p>
                 </div>
                 <div class="search-box">
@@ -118,7 +118,7 @@
                         @forelse($proposalList as $i => $p)
                         @php
                             $nilai = $p->nilai;
-                            $berhak = $dosenSaya && ($p->pembimbing1_id == $dosenSaya->id);
+                            $berhak = $p->bolehDinilaiOleh($dosenSaya);
                             $formId = 'form-nilai-' . $p->id;
                         @endphp
                         <tr>
@@ -136,7 +136,7 @@
                                 @if($berhak)
                                     <button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
                                 @else
-                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan pembimbing Anda</span>
+                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan penguji Anda</span>
                                 @endif
                             </td>
                         </tr>

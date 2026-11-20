@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root{--primary:#6c5ce7;--dark:#5a4bd1;--light:#f0eeff;--bg:#f8f9fa;--text:#2c3e50;--muted:#6c757d;--sidebar:280px;}
+        :root{--primary:#e17055;--dark:#c0392b;--light:#fdf0ee;--bg:#f8f9fa;--text:#2c3e50;--muted:#6c757d;--sidebar:280px;}
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);}
         .sidebar{position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;background:linear-gradient(180deg,var(--dark),var(--primary));z-index:1000;overflow-y:auto;}
@@ -85,7 +85,7 @@
                     <strong style="font-size:1rem;">Input &amp; Nilai Seminar Proposal</strong>
                     <p style="color:var(--muted);font-size:.83rem;margin:0;">
                         Total: {{ $proposalList->count() }} mahasiswa &middot;
-                        Anda hanya bisa mengisi nilai untuk proposal yang Anda menjadi pembimbing.
+                        Anda hanya bisa mengisi nilai untuk proposal yang Anda menjadi pembahas/penguji.
                     </p>
                 </div>
                 <div class="search-box">
@@ -118,7 +118,7 @@
                         @forelse($proposalList as $i => $p)
                         @php
                             $nilai = $p->nilai;
-                            $berhak = $dosenSaya && ($p->pembimbing1_id == $dosenSaya->id);
+                            $berhak = $p->bolehDinilaiOleh($dosenSaya);
                             $formId = 'form-nilai-' . $p->id;
                         @endphp
                         <tr>
@@ -136,7 +136,7 @@
                                 @if($berhak)
                                     <button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
                                 @else
-                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan pembimbing Anda</span>
+                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan penguji Anda</span>
                                 @endif
                             </td>
                         </tr>

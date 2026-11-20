@@ -34,7 +34,7 @@
                 <a href="{{ asset('storage/'.$sidang->file_draft) }}" target="_blank" style="text-decoration:none;color:var(--primary-green);font-size:.85rem;"><i class="fas fa-file-pdf"></i> Draft Skripsi</a>
             @endif
             @if($sidang->file_bebas_pustaka)
-                <a href="{{ asset('storage/'.$sidang->file_bebas_pustaka) }}" target="_blank" style="text-decoration:none;color:var(--primary-green);font-size:.85rem;"><i class="fas fa-file-alt"></i> Bebas Pustaka</a>
+                <a href="{{ asset('storage/'.$sidang->file_bebas_pustaka) }}" target="_blank" style="text-decoration:none;color:var(--primary-green);font-size:.85rem;"><i class="fas fa-image"></i> Foto Pengesahan</a>
             @endif
             @if($sidang->bukti_transfer)
                 <a href="{{ asset('storage/'.$sidang->bukti_transfer) }}" target="_blank" style="text-decoration:none;color:var(--primary-green);font-size:.85rem;"><i class="fas fa-image"></i> Bukti Transfer</a>
@@ -57,10 +57,8 @@
                         <span class="status-badge status-rejected"><i class="fas fa-times"></i> Ditolak Kaprodi</span>
                     @elseif($sidang->kaprodi_approved)
                         <span class="status-badge status-approved"><i class="fas fa-check-double"></i> Disetujui Kaprodi</span>
-                    @elseif($sidang->admin_verified)
-                        <span class="status-badge status-editing"><i class="fas fa-paper-plane"></i> Menunggu Kaprodi</span>
                     @else
-                        <span class="status-badge status-pending"><i class="fas fa-clock"></i> Menunggu Verifikasi Admin</span>
+                        <span class="status-badge status-editing"><i class="fas fa-paper-plane"></i> Menunggu Kaprodi</span>
                     @endif
                 </p>
             </div>
@@ -70,14 +68,7 @@
         </div>
 
         <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;">
-            @if(!$sidang->admin_verified)
-            <form action="{{ route('admin.sidang.verify', $sidang->id) }}" method="POST" onsubmit="return confirm('Verifikasi kelengkapan berkas dan kirim ke Kaprodi?');">
-                @csrf
-                <button type="submit" style="background:#3498db;color:white;border:none;padding:.7rem 1.25rem;border-radius:10px;font-weight:600;font-size:.88rem;cursor:pointer;"><i class="fas fa-paper-plane"></i> Verifikasi &amp; Kirim ke Kaprodi</button>
-            </form>
-            @else
-            <p style="color:var(--text-muted);font-size:.85rem;">Sudah diverifikasi. Keputusan setuju/tolak selanjutnya ada di tangan Kaprodi.</p>
-            @endif
+            <p style="color:var(--text-muted);font-size:.85rem;">Pendaftaran langsung diteruskan ke Kaprodi. Tidak ada verifikasi admin; keputusan setuju/tolak ada di tangan Kaprodi.</p>
         </div>
     </div>
 </div>

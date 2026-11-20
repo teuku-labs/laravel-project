@@ -57,8 +57,8 @@
 
         <div class="stats-grid">
             <div class="stat-card"><div class="stat-icon" style="background:rgba(225,112,85,.12);color:var(--primary)"><i class="fas fa-file-contract"></i></div><div><div class="stat-value">{{ $proposalList->count() }}</div><div class="stat-label">Total Proposal</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(243,156,18,.12);color:#f39c12"><i class="fas fa-clock"></i></div><div><div class="stat-value">{{ $proposalList->where('admin_verified',false)->count() }}</div><div class="stat-label">Belum Verifikasi</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(39,174,96,.12);color:#27ae60"><i class="fas fa-check"></i></div><div><div class="stat-value">{{ $proposalList->where('admin_verified',true)->count() }}</div><div class="stat-label">Terverifikasi</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(243,156,18,.12);color:#f39c12"><i class="fas fa-clock"></i></div><div><div class="stat-value">{{ $proposalList->whereNull('tanggal_seminar')->count() }}</div><div class="stat-label">Menunggu Jadwal</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(39,174,96,.12);color:#27ae60"><i class="fas fa-check"></i></div><div><div class="stat-value">{{ $proposalList->whereNotNull('tanggal_seminar')->count() }}</div><div class="stat-label">Terjadwal</div></div></div>
         </div>
 
         <div class="table-card">
@@ -79,7 +79,7 @@
                             <td>{{ Str::limit($p->judul, 40) }}</td>
                             <td>{{ $p->pembimbing1->nama ?? '-' }}</td>
                             <td><a href="{{ asset('storage/'.$p->file_proposal) }}" target="_blank" class="btn-file"><i class="fas fa-file-pdf"></i> Lihat</a></td>
-                            <td>@if($p->admin_verified)<span class="badge-done"><i class="fas fa-check"></i> Terverifikasi</span>@else<span class="badge-pending"><i class="fas fa-clock"></i> Menunggu</span>@endif</td>
+                            <td>@if($p->tanggal_seminar)<span class="badge-done"><i class="fas fa-check"></i> Terjadwal</span>@else<span class="badge-pending"><i class="fas fa-clock"></i> Menunggu Jadwal</span>@endif</td>
                         </tr>
                         @empty
                         <tr><td colspan="8"><div class="empty-state"><i class="fas fa-file-contract"></i><p>Belum ada pengajuan proposal skripsi.</p></div></td></tr>

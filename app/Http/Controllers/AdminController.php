@@ -14,6 +14,7 @@ use App\Models\SeminarLkp;
 use App\Models\Prodi;
 use App\Models\PengajuanSk;
 use App\Models\Sidang;
+use App\Models\Proposal;
 use Illuminate\Support\Facades\DB; // FIX: untuk transaksi
 
 class AdminController extends Controller
@@ -405,11 +406,11 @@ class AdminController extends Controller
     {
         $sidangs           = Sidang::with(['mahasiswa', 'pembimbing'])->latest()->paginate(15);
         $totalSidang       = Sidang::count();
-        $belumVerifikasi   = Sidang::where('admin_verified', false)->count();
+        $menungguKaprodi   = Sidang::where('kaprodi_approved', false)->where('kaprodi_rejected', false)->count();
         $disetujuiKaprodi  = Sidang::where('kaprodi_approved', true)->count();
 
         return view('admin.sidang.index', compact(
-            'sidangs', 'totalSidang', 'belumVerifikasi', 'disetujuiKaprodi'
+            'sidangs', 'totalSidang', 'menungguKaprodi', 'disetujuiKaprodi'
         ));
     }
 
@@ -419,22 +420,43 @@ class AdminController extends Controller
         return view('admin.sidang.show', compact('sidang'));
     }
 
-    /**
-     * Admin hanya memverifikasi kelengkapan berkas & meneruskan ke Kaprodi.
-     * Keputusan setuju/tolak sepenuhnya ada di tangan Kaprodi (sama seperti
-     * alur SK Pembimbing).
-     */
-    public function sidangVerify($id)
+    /*
+    |--------------------------------------------------------------------------
+    | SEMINAR PROPOSAL — View saja (tanpa verifikasi admin)
+    |--------------------------------------------------------------------------
+    */
+    public function proposalIndex(Request $request)
     {
-        $sidang = Sidang::findOrFail($id);
+        $query = Proposal::with(['mahasiswa', 'pembimbing1']);
 
-        if ($sidang->admin_verified) {
-            return back()->with('error', 'Pengajuan sidang ini sudah diverifikasi sebelumnya.');
+        if ($request->search) {
+            $query->whereHas('mahasiswa', function ($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->search . '%')
+                  ->orWhere('nim', 'like', '%' . $request->search . '%');
+            });
         }
 
-        $sidang->update(['admin_verified' => true]);
+        if ($request->status === 'menunggu_jadwal') {
+            $query->whereNull('tanggal_seminar');
+        } elseif ($request->status === 'terjadwal') {
+            $query->whereNotNull('tanggal_seminar');
+        }
 
-        return back()->with('success', 'Pengajuan sidang berhasil diverifikasi dan dikirim ke Kaprodi.');
+        $proposals       = $query->latest()->paginate(15)->withQueryString();
+        $totalProposal   = Proposal::count();
+        $menungguJadwal  = Proposal::whereNull('tanggal_seminar')->count();
+        $terjadwal       = Proposal::whereNotNull('tanggal_seminar')->count();
+
+        return view('admin.proposal.index', compact(
+            'proposals', 'totalProposal', 'menungguJadwal', 'terjadwal'
+        ));
+    }
+
+    public function proposalShow($id)
+    {
+        $proposal = Proposal::with(['mahasiswa.prodi', 'pembimbing1'])->findOrFail($id);
+
+        return view('admin.proposal.show', compact('proposal'));
     }
 
     /*

@@ -57,9 +57,9 @@
     <nav class="sidebar-menu">
         <div class="menu-cat">Menu Utama</div>
         <a href="{{ route('dosen.dashboard') }}" class="menu-item"><i class="fas fa-home"></i>Dashboard</a>
-        <a href="{{ route('dosen.jadwal') }}" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Saya@if($upcomingJadwal > 0)<span class="badge-menu">{{ $upcomingJadwal }}</span>@endif</a>
+        <a href="{{ route('dosen.jadwal') }}" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Saya @if($upcomingJadwal > 0)<span class="badge-menu">{{ $upcomingJadwal }}</span>@endif</a>
         <a href="{{ route('dosen.sk') }}" class="menu-item"><i class="fas fa-file-download"></i>Download SK</a>
-        <a href="{{ route('dosen.mahasiswa') }}" class="menu-item"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan@if($mahasiswaCount > 0)<span class="badge-menu">{{ $mahasiswaCount }}</span>@endif</a>
+        <a href="{{ route('dosen.mahasiswa') }}" class="menu-item"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan @if($mahasiswaCount > 0)<span class="badge-menu">{{ $mahasiswaCount }}</span>@endif</a>
         <div class="menu-cat" style="margin-top:1.5rem;">Penilaian</div>
         <div class="menu-dropdown {{ request()->routeIs('dosen.nilai-lkp.*','dosen.nilai-proposal.*','dosen.nilai-sidang.*') ? 'open' : '' }}">
             <button type="button" class="menu-item menu-dropdown-toggle" onclick="this.closest('.menu-dropdown').classList.toggle('open')">
@@ -93,7 +93,7 @@
             <div class="table-header">
                 <div>
                     <strong style="font-size:1rem;">Input &amp; Nilai Seminar Proposal</strong>
-                    <p style="color:var(--muted);font-size:.83rem;margin:0;">Mahasiswa yang Anda bimbing &middot; Total: {{ $proposalList->count() }}</p>
+                    <p style="color:var(--muted);font-size:.83rem;margin:0;">Mahasiswa yang Anda uji &middot; Total: {{ $proposalList->count() }}</p>
                 </div>
                 <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Cari mahasiswa..."></div>
             </div>
@@ -136,7 +136,7 @@
                             <td><button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button></td>
                         </tr>
                         @empty
-                        <tr><td colspan="10"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada proposal yang Anda bimbing.</p></div></td></tr>
+                        <tr><td colspan="10"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada proposal yang Anda uji.</p></div></td></tr>
                         @endforelse
                     </tbody>
                 </table>

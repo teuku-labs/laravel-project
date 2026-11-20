@@ -42,4 +42,15 @@ class SeminarLkp extends Model
     {
         return $this->hasOne(NilaiSeminarLkp::class, 'seminar_lkp_id');
     }
+
+    /**
+     * Seminar LKP dinyatakan lulus jika nilainya sudah diinput dan bukan E
+     * (rata-rata >= 50, sesuai konversi di HitungNilaiTrait).
+     */
+    public function lulus(): bool
+    {
+        $nilai = $this->nilai;
+
+        return $nilai !== null && (float) $nilai->rata_rata >= 50;
+    }
 }

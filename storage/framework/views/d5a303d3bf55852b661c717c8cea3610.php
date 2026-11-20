@@ -57,9 +57,17 @@
     <nav class="sidebar-menu">
         <div class="menu-cat">Menu Utama</div>
         <a href="<?php echo e(route('dosen.dashboard')); ?>" class="menu-item"><i class="fas fa-home"></i>Dashboard</a>
-        <a href="<?php echo e(route('dosen.jadwal')); ?>" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Saya@if($upcomingJadwal > 0)<span class="badge-menu"><?php echo e($upcomingJadwal); ?></span><?php endif; ?></a>
+        <a href="<?php echo e(route('dosen.jadwal')); ?>" class="menu-item"><i class="fas fa-calendar-alt"></i>Jadwal Saya
+            <?php if($upcomingJadwal > 0): ?>
+                <span class="badge-menu"><?php echo e($upcomingJadwal); ?></span>
+            <?php endif; ?>
+        </a>
         <a href="<?php echo e(route('dosen.sk')); ?>" class="menu-item"><i class="fas fa-file-download"></i>Download SK</a>
-        <a href="<?php echo e(route('dosen.mahasiswa')); ?>" class="menu-item"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan@if($mahasiswaCount > 0)<span class="badge-menu"><?php echo e($mahasiswaCount); ?></span><?php endif; ?></a>
+        <a href="<?php echo e(route('dosen.mahasiswa')); ?>" class="menu-item"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan
+            <?php if($mahasiswaCount > 0): ?>
+                <span class="badge-menu"><?php echo e($mahasiswaCount); ?></span>
+            <?php endif; ?>
+        </a>
         <div class="menu-cat" style="margin-top:1.5rem;">Penilaian</div>
         <div class="menu-dropdown <?php echo e(request()->routeIs('dosen.nilai-lkp.*','dosen.nilai-proposal.*','dosen.nilai-sidang.*') ? 'open' : ''); ?>">
             <button type="button" class="menu-item menu-dropdown-toggle" onclick="this.closest('.menu-dropdown').classList.toggle('open')">
@@ -73,7 +81,8 @@
         </div>
         <div class="menu-cat" style="margin-top:1.5rem;">Lainnya</div>
         <a href="<?php echo e(route('dosen.profile')); ?>" class="menu-item"><i class="fas fa-user"></i>Profil Saya</a>
-        <form action="<?php echo e(route('logout')); ?>" method="POST"><?php echo csrf_field(); ?>
+        <form action="<?php echo e(route('logout')); ?>" method="POST">
+            <?php echo csrf_field(); ?>
             <button type="submit" class="menu-item" style="width:100%;text-align:left;background:none;border:none;color:inherit;"><i class="fas fa-sign-out-alt"></i>Logout</button>
         </form>
     </nav>
@@ -81,13 +90,35 @@
 
 <div class="main">
     <nav class="topbar">
-        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="font-weight:600;font-size:.95rem;">Nilai Seminar LKP</span></div>
-        <div style="display:flex;align-items:center;gap:.75rem;"><div class="avatar"><?php echo e(substr($dosen->nama ?? 'D', 0, 1)); ?></div><div><div style="font-weight:600;font-size:.9rem;"><?php echo e($dosen->nama ?? '-'); ?></div><div style="font-size:.75rem;color:var(--muted);">Dosen</div></div></div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+            <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+            <span style="font-weight:600;font-size:.95rem;">Nilai Seminar LKP</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem;">
+            <div class="avatar"><?php echo e(substr($dosen->nama ?? 'D', 0, 1)); ?></div>
+            <div>
+                <div style="font-weight:600;font-size:.9rem;"><?php echo e($dosen->nama ?? '-'); ?></div>
+                <div style="font-size:.75rem;color:var(--muted);">Dosen</div>
+            </div>
+        </div>
     </nav>
 
     <div class="content">
-        <?php if(session('success')): ?><div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
-        <?php if($errors->any()): ?><div class="alert alert-danger alert-dismissible fade show"><i class="fas fa-exclamation-circle me-2"></i><?php echo e($errors->first()); ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
+        <?php if(session('success')): ?>
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
+        <?php if($errors->any()): ?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i><?php echo e($errors->first()); ?>
+
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
 
         <div class="table-card">
             <div class="table-header">
@@ -113,44 +144,54 @@
                             <th rowspan="2">Aksi</th>
                         </tr>
                         <tr>
-                            <th>Isi Materi</th><th>Penyajian</th><th>Penguasaan Materi</th><th>Sikap Mental</th>
+                            <th>Isi Materi</th>
+                            <th>Penyajian</th>
+                            <th>Penguasaan Materi</th>
+                            <th>Sikap Mental</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php $__empty_1 = true; $__currentLoopData = $seminarList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <?php
-                            $nilai = $s->nilai;
-                            $formId = 'form-nilai-' . $s->id;
-                            $bisaEdit = $s->penguji_id == $dosen->id;
-                            $peran = $bisaEdit ? 'Penguji' : 'Pembimbing';
-                        ?>
-                        <tr>
-                            <td><?php echo e($i+1); ?></td>
-                            <td class="text-start"><?php echo e(Str::limit($s->judul_lkp, 30)); ?></td>
-                            <td class="text-start"><strong><?php echo e($s->mahasiswa->nama ?? '-'); ?></strong></td>
-                            <td><?php echo e($s->mahasiswa->nim ?? '-'); ?></td>
-                            <td><?php echo e($peran); ?></td>
-                            <?php if($bisaEdit): ?>
-                            <td><input type="number" step="0.01" min="0" max="100" name="isi_materi" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('isi_materi', $nilai->isi_materi ?? '')); ?>" required></td>
-                            <td><input type="number" step="0.01" min="0" max="100" name="penyajian" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('penyajian', $nilai->penyajian ?? '')); ?>" required></td>
-                            <td><input type="number" step="0.01" min="0" max="100" name="penguasaan_materi" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('penguasaan_materi', $nilai->penguasaan_materi ?? '')); ?>" required></td>
-                            <td><input type="number" step="0.01" min="0" max="100" name="sikap_mental" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('sikap_mental', $nilai->sikap_mental ?? '')); ?>" required></td>
-                            <td class="rata-cell"><?php echo e($nilai->rata_rata ?? '-'); ?></td>
-                            <td><span class="badge-huruf"><?php echo e($nilai->nilai_huruf ?? '-'); ?></span></td>
-                            <td><button type="submit" form="<?php echo e($formId); ?>" class="btn-save"><i class="fas fa-save"></i> Simpan</button></td>
-                            <?php else: ?>
-                            
-                            <td><?php echo e($nilai->isi_materi ?? '-'); ?></td>
-                            <td><?php echo e($nilai->penyajian ?? '-'); ?></td>
-                            <td><?php echo e($nilai->penguasaan_materi ?? '-'); ?></td>
-                            <td><?php echo e($nilai->sikap_mental ?? '-'); ?></td>
-                            <td class="rata-cell"><?php echo e($nilai->rata_rata ?? '-'); ?></td>
-                            <td><span class="badge-huruf"><?php echo e($nilai->nilai_huruf ?? '-'); ?></span></td>
-                            <td><span style="color:var(--muted);font-size:.95rem;" title="Lihat saja"><i class="fas fa-lock"></i></span></td>
-                            <?php endif; ?>
-                        </tr>
+                            <?php
+                                $nilai = $s->nilai;
+                                $formId = 'form-nilai-' . $s->id;
+                                $bisaEdit = $s->penguji_id == $dosen->id;
+                                $peran = $bisaEdit ? 'Penguji' : 'Pembimbing';
+                            ?>
+                            <tr>
+                                <td><?php echo e($i + 1); ?></td>
+                                <td class="text-start"><?php echo e(Str::limit($s->judul_lkp, 30)); ?></td>
+                                <td class="text-start"><strong><?php echo e($s->mahasiswa->nama ?? '-'); ?></strong></td>
+                                <td><?php echo e($s->mahasiswa->nim ?? '-'); ?></td>
+                                <td><?php echo e($peran); ?></td>
+                                <?php if($bisaEdit): ?>
+                                    <td><input type="number" step="0.01" min="0" max="100" name="isi_materi" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('isi_materi', $nilai->isi_materi ?? '')); ?>" required></td>
+                                    <td><input type="number" step="0.01" min="0" max="100" name="penyajian" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('penyajian', $nilai->penyajian ?? '')); ?>" required></td>
+                                    <td><input type="number" step="0.01" min="0" max="100" name="penguasaan_materi" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('penguasaan_materi', $nilai->penguasaan_materi ?? '')); ?>" required></td>
+                                    <td><input type="number" step="0.01" min="0" max="100" name="sikap_mental" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('sikap_mental', $nilai->sikap_mental ?? '')); ?>" required></td>
+                                    <td class="rata-cell"><?php echo e($nilai->rata_rata ?? '-'); ?></td>
+                                    <td><span class="badge-huruf"><?php echo e($nilai->nilai_huruf ?? '-'); ?></span></td>
+                                    <td><button type="submit" form="<?php echo e($formId); ?>" class="btn-save"><i class="fas fa-save"></i> Simpan</button></td>
+                                <?php else: ?>
+                                    
+                                    <td><?php echo e($nilai->isi_materi ?? '-'); ?></td>
+                                    <td><?php echo e($nilai->penyajian ?? '-'); ?></td>
+                                    <td><?php echo e($nilai->penguasaan_materi ?? '-'); ?></td>
+                                    <td><?php echo e($nilai->sikap_mental ?? '-'); ?></td>
+                                    <td class="rata-cell"><?php echo e($nilai->rata_rata ?? '-'); ?></td>
+                                    <td><span class="badge-huruf"><?php echo e($nilai->nilai_huruf ?? '-'); ?></span></td>
+                                    <td><span style="color:var(--muted);font-size:.95rem;" title="Lihat saja"><i class="fas fa-lock"></i></span></td>
+                                <?php endif; ?>
+                            </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <tr><td colspan="11"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada seminar LKP yang Anda bimbing/uji.</p></div></td></tr>
+                            <tr>
+                                <td colspan="11">
+                                    <div class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>Belum ada seminar LKP yang Anda bimbing/uji.</p>
+                                    </div>
+                                </td>
+                            </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -159,7 +200,9 @@
 
         <?php $__currentLoopData = $seminarList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <?php if($s->penguji_id == $dosen->id): ?>
-            <form id="form-nilai-<?php echo e($s->id); ?>" action="<?php echo e(route('dosen.nilai-lkp.store', $s->id)); ?>" method="POST" style="display:none;"><?php echo csrf_field(); ?></form>
+                <form id="form-nilai-<?php echo e($s->id); ?>" action="<?php echo e(route('dosen.nilai-lkp.store', $s->id)); ?>" method="POST" style="display:none;">
+                    <?php echo csrf_field(); ?>
+                </form>
             <?php endif; ?>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
@@ -167,10 +210,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.getElementById('sidebarToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('show'));
-    document.getElementById('searchInput').addEventListener('input', function() {
+    document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('show'));
+    document.getElementById('searchInput').addEventListener('input', function () {
         const q = this.value.toLowerCase();
-        document.querySelectorAll('#nilaiTable tbody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+        document.querySelectorAll('#nilaiTable tbody tr').forEach(r => {
+            r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
     });
 </script>
 </body>
