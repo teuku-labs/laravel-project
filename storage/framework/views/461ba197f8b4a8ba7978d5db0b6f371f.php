@@ -7,6 +7,8 @@
         <a href="<?php echo e(route('dekan.jadwal')); ?>" class="menu-item <?php echo e(request()->routeIs('dekan.jadwal') ? 'active' : ''); ?>"><i class="fas fa-calendar-alt"></i>Jadwal Seminar</a>
         <a href="<?php echo e(route('dekan.proposal')); ?>" class="menu-item <?php echo e(request()->routeIs('dekan.proposal') ? 'active' : ''); ?>"><i class="fas fa-file-contract"></i>Proposal</a>
         <a href="<?php echo e(route('dekan.sidang')); ?>" class="menu-item <?php echo e(request()->routeIs('dekan.sidang') ? 'active' : ''); ?>"><i class="fas fa-gavel"></i>Sidang</a>
+        <div class="menu-cat" style="margin-top:.75rem;">Surat Keputusan</div>
+        <a href="<?php echo e(route('dekan.sk-pembimbing.index')); ?>" class="menu-item <?php echo e(request()->routeIs('dekan.sk-pembimbing.*') ? 'active' : ''); ?>"><i class="fas fa-file-signature"></i>SK Pembimbing</a>
         <div class="menu-cat" style="margin-top:.75rem;">Sebagai Pembimbing</div>
         <a href="<?php echo e(route('dekan.bimbingan.index')); ?>" class="menu-item <?php echo e(request()->routeIs('dekan.bimbingan.*') ? 'active' : ''); ?>"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan</a>
         <a href="<?php echo e(route('dekan.jadwal-saya')); ?>" class="menu-item <?php echo e(request()->routeIs('dekan.jadwal-saya') ? 'active' : ''); ?>"><i class="fas fa-calendar-check"></i>Jadwal Saya</a>

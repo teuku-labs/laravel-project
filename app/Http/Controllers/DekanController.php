@@ -15,6 +15,8 @@ use App\Models\Dosen;
 use App\Models\NilaiSeminarLkp;
 use App\Models\NilaiProposal;
 use App\Models\NilaiSidang;
+use App\Models\PengajuanSk;
+use App\Support\SkDocx;
 
 class DekanController extends Controller
 {
@@ -431,5 +433,96 @@ class DekanController extends Controller
                                 ->where('status', 'pending')->count();
 
         return view('dekan.profile', compact('dekan', 'mahasiswaBimbingan', 'pengajuanBaru'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SK PEMBIMBING
+    | Alur: mahasiswa mengajukan -> kaprodi menyetujui -> dekan mengisi
+    | nomor SK + tanggal SK -> SK bisa dicetak dari template Word.
+    |--------------------------------------------------------------------------
+    */
+    public function skPembimbingIndex()
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $pengajuanSks = PengajuanSk::with([
+                'mahasiswa.prodi', 'mahasiswa.seminarLkp', 'mahasiswa.proposal',
+                'pembimbing1', 'pembimbing2',
+            ])
+            ->where('kaprodi_approved', true)
+            ->orderByRaw('(tanggal_sk IS NULL) DESC')   // yang belum diberi nomor di atas
+            ->latest()
+            ->get();
+
+        $totalSk       = $pengajuanSks->count();
+        $belumTerbit   = $pengajuanSks->filter(fn ($p) => !$p->sudahTerbit())->count();
+        $sudahTerbit   = $totalSk - $belumTerbit;
+
+        return view('dekan.sk-pembimbing.index', compact(
+            'dekan', 'pengajuanSks', 'totalSk', 'belumTerbit', 'sudahTerbit'
+        ));
+    }
+
+    public function skPembimbingSimpan(Request $request, $id)
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $pengajuan = PengajuanSk::where('kaprodi_approved', true)->findOrFail($id);
+
+        $request->validate([
+            'nomor_sk'   => 'required|string|max:100|unique:pengajuan_sks,nomor_sk,' . $pengajuan->id,
+            'tanggal_sk' => 'required|date',
+        ], [
+            'nomor_sk.required'   => 'Nomor SK wajib diisi.',
+            'nomor_sk.unique'     => 'Nomor SK tersebut sudah dipakai SK lain.',
+            'tanggal_sk.required' => 'Tanggal SK wajib diisi.',
+            'tanggal_sk.date'     => 'Tanggal SK tidak valid.',
+        ]);
+
+        $pengajuan->update([
+            'nomor_sk'   => trim($request->nomor_sk),
+            'tanggal_sk' => $request->tanggal_sk,
+        ]);
+
+        return back()->with('success', 'Nomor dan tanggal SK Pembimbing berhasil disimpan.');
+    }
+
+    public function skPembimbingCetak($id)
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $pengajuan = PengajuanSk::with([
+                'mahasiswa.prodi', 'mahasiswa.seminarLkp', 'mahasiswa.proposal',
+                'pembimbing1', 'pembimbing2',
+            ])
+            ->where('kaprodi_approved', true)
+            ->findOrFail($id);
+
+        // Tanda tangan + stempel ada di template, jadi hanya dicetak setelah SK resmi terbit.
+        if (!$pengajuan->sudahTerbit()) {
+            return back()->withErrors(['sk' => 'Isi nomor SK dan tanggal SK terlebih dahulu sebelum mencetak.']);
+        }
+
+        $kurang = $pengajuan->kekuranganData();
+        if ($kurang) {
+            return back()->withErrors(['sk' => 'SK belum bisa dicetak, data belum lengkap: ' . implode(', ', $kurang) . '.']);
+        }
+
+        try {
+            $file = $pengajuan->buatFileSk();
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withErrors(['sk' => 'Gagal membuat file SK: ' . $e->getMessage()]);
+        }
+
+        return response()
+            ->download($file, $pengajuan->namaFileSk(), [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
     }
 }

@@ -738,13 +738,6 @@
             <!-- Akademik Section -->
             <div class="menu-category">Akademik</div>
             
-            <a href="{{ route('admin.sk-pembimbing.index') }}" class="menu-item {{ request()->routeIs('admin.sk-pembimbing.*') ? 'active' : '' }}">
-                <i class="fas fa-file-signature"></i>
-                <span>SK Pembimbing</span>
-                @if($pendingSK ?? 0 > 0)
-                    <span class="badge">{{ $pendingSK }}</span>
-                @endif
-            </a>
             
             <a href="{{ route('admin.seminar.index') }}" class="menu-item {{ request()->routeIs('admin.seminar.*') ? 'active' : '' }}">
                 <i class="fas fa-chalkboard"></i>

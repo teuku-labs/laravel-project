@@ -160,19 +160,87 @@ class MahasiswaController extends Controller
             return back()->with('error', 'Kedua dosen pembimbing harus sudah menyetujui bimbingan terlebih dahulu.');
         }
 
-        if (PengajuanSk::where('mahasiswa_id', $mahasiswa->id)->exists()) {
-            return back()->with('error', 'SK Pembimbing sudah pernah diajukan.');
+        $pengajuanLama = PengajuanSk::where('mahasiswa_id', $mahasiswa->id)->first();
+
+        if ($pengajuanLama) {
+            // Hanya pengajuan yang ditolak kaprodi yang boleh diajukan ulang
+            if (!$pengajuanLama->kaprodi_rejected) {
+                return back()->with('error', 'SK Pembimbing sudah pernah diajukan.');
+            }
+
+            $pengajuanLama->update([
+                'pembimbing1_id'   => $mahasiswa->pembimbing1_id,
+                'pembimbing2_id'   => $mahasiswa->pembimbing2_id,
+                'admin_verified'   => true,
+                'kaprodi_approved' => false,
+                'kaprodi_rejected' => false,
+                'catatan_kaprodi'  => null,
+            ]);
+
+            return back()->with('success', 'Pengajuan SK Pembimbing berhasil dikirim ulang!');
         }
 
         PengajuanSk::create([
             'mahasiswa_id'     => $mahasiswa->id,
             'pembimbing1_id'   => $mahasiswa->pembimbing1_id,
             'pembimbing2_id'   => $mahasiswa->pembimbing2_id,
-            'admin_verified'   => false,
+            // Tanpa verifikasi admin: langsung masuk ke kaprodi
+            'admin_verified'   => true,
             'kaprodi_approved' => false,
             'kaprodi_rejected' => false,
         ]);
 
         return back()->with('success', 'Pengajuan SK Pembimbing berhasil dikirim!');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lihat & unduh SK Pembimbing milik sendiri
+    |--------------------------------------------------------------------------
+    */
+    public function skShow()
+    {
+        $user      = Auth::user();
+        $mahasiswa = Mahasiswa::with(['prodi', 'pembimbing1', 'pembimbing2', 'seminarLkp', 'proposal', 'pengajuanSk'])
+            ->where('user_id', $user->id)->firstOrFail();
+
+        $sk = $mahasiswa->pengajuanSk;
+        if (!$sk) {
+            return redirect()->route('mahasiswa.dashboard')
+                ->with('error', 'Anda belum mengajukan SK Pembimbing.');
+        }
+
+        return view('mahasiswa.sk', compact('mahasiswa', 'sk'));
+    }
+
+    public function skUnduh()
+    {
+        $mahasiswa = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
+        $sk = $mahasiswa->pengajuanSk;
+
+        // Hanya SK milik sendiri yang sudah disetujui kaprodi dan diterbitkan dekan
+        if (!$sk || !$sk->kaprodi_approved || !$sk->sudahTerbit()) {
+            return redirect()->route('sk.show')
+                ->with('error', 'SK Pembimbing belum diterbitkan, jadi belum bisa diunduh.');
+        }
+
+        $kurang = $sk->kekuranganData();
+        if ($kurang) {
+            return redirect()->route('sk.show')
+                ->with('error', 'SK belum bisa diunduh, data belum lengkap: ' . implode(', ', $kurang) . '.');
+        }
+
+        try {
+            $file = $sk->buatFileSk();
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect()->route('sk.show')->with('error', 'Gagal membuat file SK, silakan coba lagi.');
+        }
+
+        return response()
+            ->download($file, $sk->namaFileSk(), [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
     }
 }

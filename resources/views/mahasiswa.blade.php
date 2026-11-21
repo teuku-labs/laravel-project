@@ -827,6 +827,122 @@
 
         </div>
       
+        <!-- SECTION: SK Pembimbing -->
+        <h5 class="section-title" style="margin-top: 2rem;">
+            <i class="fas fa-file-signature"></i>
+            SK Pembimbing Tugas Akhir
+        </h5>
+
+        @php
+            $sk          = $mahasiswa->pengajuanSk;
+            $skTerbit    = $sk && $sk->sudahTerbit();
+            $skDitolak   = $sk && $sk->kaprodi_rejected;
+            $skDisetujui = $sk && $sk->kaprodi_approved;
+            $bolehAjukan = $jumlah >= 2 && (!$sk || $skDitolak);
+        @endphp
+
+        <div class="full-width-card {{ $skTerbit ? 'completed' : '' }}">
+
+            <!-- HEADER -->
+            <div class="card-header-custom">
+                <div class="card-icon {{ $skTerbit ? 'completed' : '' }}">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+
+                <div>
+                    <div class="card-title">Pengajuan SK Penunjukan Pembimbing</div>
+                    <div class="card-subtitle">
+                        SK diajukan setelah kedua dosen pembimbing menyetujui, lalu diproses kaprodi dan dekan
+                    </div>
+                </div>
+
+                <!-- STATUS -->
+                <div class="ms-auto">
+                    @if($skTerbit)
+                        <span class="status-badge status-completed">
+                            <i class="fas fa-check-circle"></i> SK Terbit
+                        </span>
+                    @elseif($skDisetujui)
+                        <span class="status-badge status-pending">
+                            <i class="fas fa-clock"></i> Menunggu SK diterbitkan dekan
+                        </span>
+                    @elseif($skDitolak)
+                        <span class="status-badge" style="background: rgba(231, 76, 60, 0.15); color: #e74c3c;">
+                            <i class="fas fa-times-circle"></i> Ditolak Kaprodi
+                        </span>
+                    @elseif($sk)
+                        <span class="status-badge status-pending">
+                            <i class="fas fa-clock"></i> Menunggu persetujuan kaprodi
+                        </span>
+                    @elseif($jumlah < 2)
+                        <span class="status-badge status-closed">
+                            <i class="fas fa-lock"></i> Menunggu 2 Pembimbing
+                        </span>
+                    @else
+                        <span class="status-badge status-open">
+                            <i class="fas fa-exclamation-circle"></i> Belum Diajukan
+                        </span>
+                    @endif
+                </div>
+            </div>
+
+            <!-- INFO -->
+            @if($skTerbit || $skDitolak)
+                <div class="mt-2">
+                    @if($skTerbit)
+                        <div class="alert alert-success py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
+                            <i class="fas fa-check-circle me-1"></i>
+                            SK Pembimbing sudah terbit. Nomor SK: <strong>{{ $sk->nomor_sk }}</strong>,
+                            tanggal <strong>{{ \App\Models\PengajuanSk::tanggalIndonesia($sk->tanggal_sk) }}</strong>.
+                        </div>
+                        @if(!empty($sk->kekuranganData()))
+                            <div class="text-muted mb-2" style="font-size: 0.82rem;">
+                                SK belum dapat diunduh karena data belum lengkap.
+                                <a href="{{ route('sk.show') }}">Lihat rinciannya</a>
+                            </div>
+                        @endif
+                    @else
+                        <div class="alert alert-danger py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
+                            <i class="fas fa-times-circle me-1"></i>
+                            Pengajuan SK ditolak kaprodi.
+                            @if($sk->catatan_kaprodi) Catatan: <strong>{{ $sk->catatan_kaprodi }}</strong>. @endif
+                            Silakan perbaiki lalu ajukan kembali.
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            <!-- BUTTON -->
+            <div style="text-align: right;">
+                @if($sk)
+                    <a href="{{ route('sk.show') }}" class="btn btn-action"
+                       style="width: auto; display: inline-flex; padding: 0.75rem 2rem; background: #fff; color: var(--dark-green); border: 2px solid var(--primary-green);">
+                        <i class="fas fa-eye"></i> Lihat SK
+                    </a>
+                @endif
+                @if($skTerbit && empty($sk->kekuranganData()))
+                    <a href="{{ route('sk.unduh') }}" class="btn btn-action btn-primary-custom"
+                       style="width: auto; display: inline-flex; padding: 0.75rem 2rem;">
+                        <i class="fas fa-download"></i> Unduh SK
+                    </a>
+                @endif
+                <form action="{{ route('sk.ajukan') }}" method="POST" style="display: inline;"
+                      onsubmit="return confirm('Ajukan SK Pembimbing sekarang?');">
+                    @csrf
+                    <button type="submit" class="btn btn-action btn-primary-custom"
+                            {{ $bolehAjukan ? '' : 'disabled' }}
+                            style="width: auto; display: inline-flex; padding: 0.75rem 2rem;">
+                        <i class="fas fa-paper-plane"></i>
+                        @if($skDitolak) Ajukan Ulang SK
+                        @elseif($sk) SK Sudah Diajukan
+                        @else Ajukan SK
+                        @endif
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
         <!-- MODAL: PILIH DOSEN LKP -->
         <div class="modal fade" id="pilihDosenLkpModal" tabindex="-1">
             <div class="modal-dialog modal-lg">

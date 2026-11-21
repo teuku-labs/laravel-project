@@ -82,13 +82,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/proposal',             [AdminController::class, 'proposalIndex'])->name('proposal.index');
         Route::get('/proposal/{id}',        [AdminController::class, 'proposalShow'])->name('proposal.show');
         
-        // Kelola SK Pembimbing
-        Route::get('/sk-pembimbing',        [AdminController::class, 'skPembimbingIndex'])->name('sk-pembimbing.index');
-        Route::get('/sk-pembimbing/{id}/edit', [AdminController::class, 'skPembimbingEdit'])->name('sk-pembimbing.edit');
-        Route::put('/sk-pembimbing/{id}',   [AdminController::class, 'skPembimbingUpdate'])->name('sk-pembimbing.update');
-        Route::get('/sk-pembimbing/{id}',   [AdminController::class, 'skPembimbingShow'])->name('sk-pembimbing.show');
-        Route::post('/sk-pembimbing/{id}/approval', [AdminController::class, 'skPembimbingSubmitApproval'])->name('sk-pembimbing.submit-approval');
-        
         Route::get('/approval',             fn() => back())->name('approval.index');
 
         // Profile & Settings
@@ -110,6 +103,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/proposal/daftar', [ProposalController::class, 'store'])->name('proposal.daftar');
         Route::post('/sidang/daftar',   [SidangController::class, 'store'])->name('sidang.daftar');
         Route::post('/sk/ajukan', [MahasiswaController::class, 'ajukanSk'])->name('sk.ajukan');
+        Route::get('/sk',          [MahasiswaController::class, 'skShow'])->name('sk.show');
+        Route::get('/sk/unduh',    [MahasiswaController::class, 'skUnduh'])->name('sk.unduh');
 
         // Profile & Settings mahasiswa
         Route::get('/mahasiswa/profile',            [MahasiswaController::class, 'profile'])->name('mahasiswa.profile');
@@ -199,6 +194,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/nilai-sidang/{id}', [DekanController::class, 'nilaiSidangStore'])->name('nilai-sidang.store');
         Route::get('/sidang',    [DekanController::class, 'sidang'])->name('sidang');
         Route::get('/profile',   [DekanController::class, 'profile'])->name('profile');
+
+        // SK Pembimbing (kaprodi sudah setuju -> dekan isi nomor & tanggal SK -> cetak)
+        Route::get('/sk-pembimbing',              [DekanController::class, 'skPembimbingIndex'])->name('sk-pembimbing.index');
+        Route::post('/sk-pembimbing/{id}',        [DekanController::class, 'skPembimbingSimpan'])->name('sk-pembimbing.simpan');
+        Route::get('/sk-pembimbing/{id}/cetak',   [DekanController::class, 'skPembimbingCetak'])->name('sk-pembimbing.cetak');
 
         Route::get('/bimbingan',                [DekanController::class, 'bimbinganIndex'])->name('bimbingan.index');
         Route::post('/bimbingan/{id}/approve',  [DekanController::class, 'bimbinganApprove'])->name('bimbingan.approve');

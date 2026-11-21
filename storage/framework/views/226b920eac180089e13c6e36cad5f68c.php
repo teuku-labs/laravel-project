@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nilai Seminar LKP - Dekan</title>
+    <title>Nilai Seminar Proposal - Kaprodi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root{--primary:#e17055;--dark:#c0392b;--light:#fdf0ee;--bg:#f8f9fa;--text:#2c3e50;--muted:#6c757d;--sidebar:280px;}
+        :root{--primary:#6c5ce7;--dark:#5a4bd1;--light:#f0eeff;--bg:#f8f9fa;--text:#2c3e50;--muted:#6c757d;--sidebar:280px;}
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);}
         .sidebar{position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;background:linear-gradient(180deg,var(--dark),var(--primary));z-index:1000;overflow-y:auto;}
@@ -51,17 +51,17 @@
     </style>
 </head>
 <body>
-<?php echo $__env->make('dekan.partials.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+<?php echo $__env->make('kaprodi.partials.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
 <div class="main">
     <nav class="topbar">
         <div style="display:flex;align-items:center;gap:1rem;">
             <button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-            <span style="color:var(--muted);font-size:.9rem;">Nilai Seminar LKP</span>
+            <span style="color:var(--muted);font-size:.9rem;">Nilai Seminar Proposal</span>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem;">
-            <div class="avatar"><?php echo e(substr($dekan->nama ?? 'D', 0, 1)); ?></div>
-            <div><div class="uname"><?php echo e($dekan->nama ?? '-'); ?></div><div class="urole">Dekan</div></div>
+            <div class="avatar"><?php echo e(substr($kaprodi->nama ?? 'K', 0, 1)); ?></div>
+            <div><div class="uname"><?php echo e($kaprodi->nama ?? '-'); ?></div><div class="urole">Kaprodi</div></div>
         </div>
     </nav>
 
@@ -84,10 +84,10 @@
         <div class="table-card">
             <div class="table-header">
                 <div>
-                    <strong style="font-size:1rem;">Input &amp; Nilai Seminar LKP</strong>
+                    <strong style="font-size:1rem;">Input &amp; Nilai Seminar Proposal</strong>
                     <p style="color:var(--muted);font-size:.83rem;margin:0;">
-                        Total: <?php echo e($seminarList->count()); ?> mahasiswa &middot;
-                        Anda hanya bisa mengisi nilai untuk seminar yang Anda menjadi pembimbing/penguji.
+                        Total: <?php echo e($proposalList->count()); ?> mahasiswa &middot;
+                        Anda hanya bisa mengisi nilai untuk proposal yang Anda menjadi pembahas/penguji.
                     </p>
                 </div>
                 <div class="search-box">
@@ -101,7 +101,7 @@
                     <thead>
                         <tr>
                             <th rowspan="2">No</th>
-                            <th rowspan="2">Judul LKP</th>
+                            <th rowspan="2">Judul Proposal</th>
                             <th rowspan="2">Nama</th>
                             <th rowspan="2">NIM</th>
                             <th colspan="4">Aspek Penilaian</th>
@@ -117,17 +117,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php $__empty_1 = true; $__currentLoopData = $seminarList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php $__empty_1 = true; $__currentLoopData = $proposalList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <?php
-                            $nilai = $s->nilai;
-                            $berhak = $dosenSaya && ($s->pembimbing1_id == $dosenSaya->id || $s->penguji_id == $dosenSaya->id);
-                            $formId = 'form-nilai-' . $s->id;
+                            $nilai = $p->nilai;
+                            $berhak = $p->bolehDinilaiOleh($dosenSaya);
+                            $formId = 'form-nilai-' . $p->id;
                         ?>
                         <tr>
                             <td><?php echo e($i+1); ?></td>
-                            <td class="text-start"><?php echo e(Str::limit($s->judul_lkp, 30)); ?></td>
-                            <td class="text-start"><strong><?php echo e($s->mahasiswa->nama ?? '-'); ?></strong></td>
-                            <td><?php echo e($s->mahasiswa->nim ?? '-'); ?></td>
+                            <td class="text-start"><?php echo e(Str::limit($p->judul, 30)); ?></td>
+                            <td class="text-start"><strong><?php echo e($p->mahasiswa->nama ?? '-'); ?></strong></td>
+                            <td><?php echo e($p->mahasiswa->nim ?? '-'); ?></td>
                             <td><input type="number" step="0.01" min="0" max="100" name="isi_materi" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('isi_materi', $nilai->isi_materi ?? '')); ?>" <?php echo e($berhak ? '' : 'disabled'); ?> required></td>
                             <td><input type="number" step="0.01" min="0" max="100" name="penyajian" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('penyajian', $nilai->penyajian ?? '')); ?>" <?php echo e($berhak ? '' : 'disabled'); ?> required></td>
                             <td><input type="number" step="0.01" min="0" max="100" name="penguasaan_materi" form="<?php echo e($formId); ?>" class="nilai-input" value="<?php echo e(old('penguasaan_materi', $nilai->penguasaan_materi ?? '')); ?>" <?php echo e($berhak ? '' : 'disabled'); ?> required></td>
@@ -138,12 +138,12 @@
                                 <?php if($berhak): ?>
                                     <button type="submit" form="<?php echo e($formId); ?>" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
                                 <?php else: ?>
-                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan penguji/pembimbing Anda</span>
+                                    <span class="badge-locked"><i class="fas fa-lock"></i> Bukan penguji Anda</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                        <tr><td colspan="10"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data seminar LKP.</p></div></td></tr>
+                        <tr><td colspan="10"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data seminar proposal.</p></div></td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -151,8 +151,8 @@
         </div>
 
         
-        <?php $__currentLoopData = $seminarList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <form id="form-nilai-<?php echo e($s->id); ?>" action="<?php echo e(route('dekan.nilai-lkp.store', $s->id)); ?>" method="POST" style="display:none;">
+        <?php $__currentLoopData = $proposalList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <form id="form-nilai-<?php echo e($p->id); ?>" action="<?php echo e(route('kaprodi.nilai-proposal.store', $p->id)); ?>" method="POST" style="display:none;">
                 <?php echo csrf_field(); ?>
             </form>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -170,4 +170,4 @@
     });
 </script>
 </body>
-</html><?php /**PATH C:\laragon\www\seminar-apk\resources\views/dekan/nilai-lkp.blade.php ENDPATH**/ ?>
+</html><?php /**PATH C:\laragon\www\seminar-apk\resources\views/kaprodi/nilai-proposal.blade.php ENDPATH**/ ?>
