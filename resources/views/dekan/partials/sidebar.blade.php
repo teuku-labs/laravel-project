@@ -9,6 +9,7 @@
         <a href="{{ route('dekan.sidang') }}" class="menu-item {{ request()->routeIs('dekan.sidang') ? 'active' : '' }}"><i class="fas fa-gavel"></i>Sidang</a>
         <div class="menu-cat" style="margin-top:.75rem;">Surat Keputusan</div>
         <a href="{{ route('dekan.sk-pembimbing.index') }}" class="menu-item {{ request()->routeIs('dekan.sk-pembimbing.*') ? 'active' : '' }}"><i class="fas fa-file-signature"></i>SK Pembimbing</a>
+        <a href="{{ route('dekan.sk-pembahas.index') }}" class="menu-item {{ request()->routeIs('dekan.sk-pembahas.*') ? 'active' : '' }}"><i class="fas fa-file-signature"></i>SK Pembahas</a>
         <div class="menu-cat" style="margin-top:.75rem;">Sebagai Pembimbing</div>
         <a href="{{ route('dekan.bimbingan.index') }}" class="menu-item {{ request()->routeIs('dekan.bimbingan.*') ? 'active' : '' }}"><i class="fas fa-user-graduate"></i>Mahasiswa Bimbingan</a>
         <a href="{{ route('dekan.jadwal-saya') }}" class="menu-item {{ request()->routeIs('dekan.jadwal-saya') ? 'active' : '' }}"><i class="fas fa-calendar-check"></i>Jadwal Saya</a>

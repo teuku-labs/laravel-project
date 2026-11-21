@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SK Pembimbing Saya - Student Portal</title>
+    <title>SK Pembahas Saya - Student Portal</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -179,10 +179,10 @@
     <!-- Navbar -->
     <nav class="navbar">
         <div class="d-flex justify-content-between align-items-center">
-            <a class="navbar-brand" href="<?php echo e(route('mahasiswa.dashboard')); ?>">
+            <a class="navbar-brand" href="{{ route('mahasiswa.dashboard') }}">
                 <i class="fas fa-graduation-cap"></i>Student<span>Portal</span>
             </a>
-            <a href="<?php echo e(route('mahasiswa.dashboard')); ?>" class="btn-back">
+            <a href="{{ route('mahasiswa.dashboard') }}" class="btn-back">
                 <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
             </a>
         </div>
@@ -190,70 +190,56 @@
 
     <div class="main-content">
 
-        <?php if(session('success')): ?>
+        @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle"></i> <?php echo e(session('success')); ?>
-
+                <i class="fas fa-check-circle"></i> {{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        <?php endif; ?>
-        <?php if(session('error')): ?>
+        @endif
+        @if(session('error'))
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle"></i> <?php echo e(session('error')); ?>
-
+                <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        <?php endif; ?>
+        @endif
 
-        <?php
-            $terbit    = $sk->sudahTerbit();
-            $disetujui = (bool) $sk->kaprodi_approved;
-            $ditolak   = (bool) $sk->kaprodi_rejected;
-            $judul     = $sk->judulTga();
-            $ttl       = $sk->tempatTanggalLahir();
-            $kurang    = $sk->kekuranganData();
-            $bisaUnduh = $terbit && $disetujui && empty($kurang);
-        ?>
+        @php
+            $terbit    = $proposal->sudahTerbitSkPembahas();
+            $judul     = $proposal->judul;
+            $ttl       = $proposal->tempatTanggalLahir();
+            $kurang    = $proposal->kekuranganDataSkPembahas();
+            $bisaUnduh = $terbit && empty($kurang);
+        @endphp
 
-        <!-- Status pengajuan -->
+        <!-- Status SK -->
         <div class="profile-card">
-            <div class="section-title"><i class="fas fa-route"></i> Status Pengajuan SK Pembimbing</div>
+            <div class="section-title"><i class="fas fa-route"></i> Status SK Pembahas</div>
 
             <div class="steps">
                 <div class="step done">
-                    <div class="step-dot"><i class="fas fa-paper-plane"></i></div>
+                    <div class="step-dot"><i class="fas fa-file-alt"></i></div>
                     <div>
-                        <div class="step-title">Pengajuan dikirim</div>
-                        <div class="step-desc"><?php echo e($sk->created_at->format('d-m-Y')); ?></div>
+                        <div class="step-title">Proposal didaftarkan</div>
+                        <div class="step-desc">{{ $proposal->created_at->format('d-m-Y') }}</div>
                     </div>
                 </div>
 
-                <div class="step <?php echo e($disetujui ? 'done' : ($ditolak ? 'rejected' : 'current')); ?>">
-                    <div class="step-dot">
-                        <i class="fas <?php echo e($disetujui ? 'fa-check' : ($ditolak ? 'fa-times' : 'fa-hourglass-half')); ?>"></i>
-                    </div>
+                <div class="step done">
+                    <div class="step-dot"><i class="fas fa-check"></i></div>
                     <div>
-                        <div class="step-title">Persetujuan Kaprodi</div>
-                        <div class="step-desc">
-                            <?php if($disetujui): ?> Disetujui
-                            <?php elseif($ditolak): ?> Ditolak. <?php echo e($sk->catatan_kaprodi ? 'Catatan: ' . $sk->catatan_kaprodi : ''); ?>
-
-                            <?php else: ?> Menunggu persetujuan kaprodi
-                            <?php endif; ?>
-                        </div>
+                        <div class="step-title">Dosen pembahas ditetapkan kaprodi</div>
+                        <div class="step-desc">{{ $proposal->penguji1->nama ?? '-' }} dan {{ $proposal->penguji2->nama ?? '-' }}</div>
                     </div>
                 </div>
 
-                <div class="step <?php echo e($terbit ? 'done' : ($disetujui ? 'current' : '')); ?>">
-                    <div class="step-dot"><i class="fas <?php echo e($terbit ? 'fa-check' : 'fa-stamp'); ?>"></i></div>
+                <div class="step {{ $terbit ? 'done' : 'current' }}">
+                    <div class="step-dot"><i class="fas {{ $terbit ? 'fa-check' : 'fa-stamp' }}"></i></div>
                     <div>
                         <div class="step-title">SK diterbitkan Dekan</div>
                         <div class="step-desc">
-                            <?php if($terbit): ?> Terbit pada <?php echo e(\App\Models\PengajuanSk::tanggalIndonesia($sk->tanggal_sk)); ?>
-
-                            <?php elseif($disetujui): ?> Menunggu dekan memberi nomor dan tanggal SK
-                            <?php else: ?> Belum diproses
-                            <?php endif; ?>
+                            @if($terbit) Terbit pada {{ \App\Models\PengajuanSk::tanggalIndonesia($proposal->tanggal_sk_pembahas) }}
+                            @else Menunggu dekan memberi nomor dan tanggal SK
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -268,35 +254,35 @@
                 <div class="info-icon"><i class="fas fa-hashtag"></i></div>
                 <div>
                     <div class="info-label">Nomor SK</div>
-                    <div class="info-value"><?php echo e($terbit ? $sk->nomor_sk : 'Belum terbit'); ?></div>
+                    <div class="info-value">{{ $terbit ? $proposal->nomor_sk_pembahas : 'Belum terbit' }}</div>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-icon"><i class="fas fa-calendar-day"></i></div>
                 <div>
                     <div class="info-label">Tanggal SK</div>
-                    <div class="info-value"><?php echo e($terbit ? \App\Models\PengajuanSk::tanggalIndonesia($sk->tanggal_sk) : 'Belum terbit'); ?></div>
+                    <div class="info-value">{{ $terbit ? \App\Models\PengajuanSk::tanggalIndonesia($proposal->tanggal_sk_pembahas) : 'Belum terbit' }}</div>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-icon"><i class="fas fa-calendar"></i></div>
                 <div>
                     <div class="info-label">TA. Semester</div>
-                    <div class="info-value"><?php echo e($sk->taSemester()); ?></div>
+                    <div class="info-value">{{ $proposal->taSemester() }}</div>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-icon"><i class="fas fa-user-graduate"></i></div>
                 <div>
                     <div class="info-label">Nama / NIM</div>
-                    <div class="info-value"><?php echo e($mahasiswa->nama); ?> / <?php echo e($mahasiswa->nim); ?></div>
+                    <div class="info-value">{{ $mahasiswa->nama }} / {{ $mahasiswa->nim }}</div>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-icon"><i class="fas fa-building"></i></div>
                 <div>
                     <div class="info-label">Program Studi</div>
-                    <div class="info-value"><?php echo e($mahasiswa->prodi->nama_prodi ?? '-'); ?></div>
+                    <div class="info-value">{{ $mahasiswa->prodi->nama_prodi ?? '-' }}</div>
                 </div>
             </div>
             <div class="info-row">
@@ -304,10 +290,9 @@
                 <div>
                     <div class="info-label">Tempat/Tgl. Lahir</div>
                     <div class="info-value">
-                        <?php if($ttl): ?> <?php echo e($ttl); ?>
-
-                        <?php else: ?> <span class="warn-text"><i class="fas fa-exclamation-triangle"></i> Belum ada, daftar Seminar LKP terlebih dahulu</span>
-                        <?php endif; ?>
+                        @if($ttl) {{ $ttl }}
+                        @else <span class="warn-text"><i class="fas fa-exclamation-triangle"></i> Belum ada, daftar Seminar LKP terlebih dahulu</span>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -315,47 +300,42 @@
                 <div class="info-icon"><i class="fas fa-book"></i></div>
                 <div>
                     <div class="info-label">Judul TGA</div>
-                    <div class="info-value">
-                        <?php if($judul): ?> <?php echo e($judul); ?>
-
-                        <?php else: ?> <span class="warn-text"><i class="fas fa-exclamation-triangle"></i> Belum ada, daftar Proposal terlebih dahulu</span>
-                        <?php endif; ?>
-                    </div>
+                    <div class="info-value">{{ $judul ?: '-' }}</div>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-icon"><i class="fas fa-user-tie"></i></div>
                 <div>
-                    <div class="info-label">Pembimbing Utama</div>
-                    <div class="info-value"><?php echo e($sk->pembimbing1->nama ?? '-'); ?></div>
+                    <div class="info-label">Pembahas I</div>
+                    <div class="info-value">{{ $proposal->penguji1->nama ?? '-' }}</div>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-icon"><i class="fas fa-user-tie"></i></div>
                 <div>
-                    <div class="info-label">Pembimbing Pendamping</div>
-                    <div class="info-value"><?php echo e($sk->pembimbing2->nama ?? '-'); ?></div>
+                    <div class="info-label">Pembahas II</div>
+                    <div class="info-value">{{ $proposal->penguji2->nama ?? '-' }}</div>
                 </div>
             </div>
         </div>
 
         <!-- Unduh -->
         <div class="profile-card" style="text-align:center;">
-            <?php if($bisaUnduh): ?>
-                <a href="<?php echo e(route('sk.unduh')); ?>" class="btn-download"><i class="fas fa-file-word"></i> Unduh SK (Word)</a>
+            @if($bisaUnduh)
+                <a href="{{ route('sk-pembahas.unduh') }}" class="btn-download"><i class="fas fa-file-word"></i> Unduh SK (Word)</a>
                 <div class="step-desc mt-2">File berformat .docx lengkap dengan kop surat, tanda tangan, dan stempel.</div>
-            <?php else: ?>
+            @else
                 <span class="btn-download disabled"><i class="fas fa-file-word"></i> Unduh SK (Word)</span>
                 <div class="step-desc mt-2">
-                    <?php if(!$terbit): ?> SK dapat diunduh setelah diterbitkan oleh dekan.
-                    <?php else: ?> SK belum bisa diunduh, data belum lengkap: <?php echo e(implode(', ', $kurang)); ?>.
-                    <?php endif; ?>
+                    @if(!$terbit) SK dapat diunduh setelah diterbitkan oleh dekan.
+                    @else SK belum bisa diunduh, data belum lengkap: {{ implode(', ', $kurang) }}.
+                    @endif
                 </div>
-            <?php endif; ?>
+            @endif
         </div>
 
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html><?php /**PATH C:\laragon\www\seminar-apk\resources\views/mahasiswa/sk.blade.php ENDPATH**/ ?>
+</html>

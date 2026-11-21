@@ -105,6 +105,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/sk/ajukan', [MahasiswaController::class, 'ajukanSk'])->name('sk.ajukan');
         Route::get('/sk',          [MahasiswaController::class, 'skShow'])->name('sk.show');
         Route::get('/sk/unduh',    [MahasiswaController::class, 'skUnduh'])->name('sk.unduh');
+        Route::get('/sk-pembahas',        [MahasiswaController::class, 'skPembahasShow'])->name('sk-pembahas.show');
+        Route::get('/sk-pembahas/unduh',  [MahasiswaController::class, 'skPembahasUnduh'])->name('sk-pembahas.unduh');
 
         // Profile & Settings mahasiswa
         Route::get('/mahasiswa/profile',            [MahasiswaController::class, 'profile'])->name('mahasiswa.profile');
@@ -199,6 +201,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/sk-pembimbing',              [DekanController::class, 'skPembimbingIndex'])->name('sk-pembimbing.index');
         Route::post('/sk-pembimbing/{id}',        [DekanController::class, 'skPembimbingSimpan'])->name('sk-pembimbing.simpan');
         Route::get('/sk-pembimbing/{id}/cetak',   [DekanController::class, 'skPembimbingCetak'])->name('sk-pembimbing.cetak');
+
+        // SK Pembahas (kaprodi sudah menetapkan pembahas -> dekan isi nomor & tanggal SK -> cetak)
+        Route::get('/sk-pembahas',                [DekanController::class, 'skPembahasIndex'])->name('sk-pembahas.index');
+        Route::post('/sk-pembahas/{id}',          [DekanController::class, 'skPembahasSimpan'])->name('sk-pembahas.simpan');
+        Route::get('/sk-pembahas/{id}/cetak',     [DekanController::class, 'skPembahasCetak'])->name('sk-pembahas.cetak');
 
         Route::get('/bimbingan',                [DekanController::class, 'bimbinganIndex'])->name('bimbingan.index');
         Route::post('/bimbingan/{id}/approve',  [DekanController::class, 'bimbinganApprove'])->name('bimbingan.approve');

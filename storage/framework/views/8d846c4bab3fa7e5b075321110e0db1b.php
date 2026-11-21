@@ -952,6 +952,87 @@
 
         </div>
 
+        <!-- SECTION: SK Pembahas -->
+        <?php if($proposal): ?>
+        <?php
+            $pembahasLengkap = $proposal->penguji1_id && $proposal->penguji2_id;
+            $skpTerbit       = $proposal->sudahTerbitSkPembahas();
+        ?>
+
+        <h5 class="section-title" style="margin-top: 2rem;">
+            <i class="fas fa-file-signature"></i>
+            SK Pembahas
+        </h5>
+
+        <div class="full-width-card <?php echo e($skpTerbit ? 'completed' : ''); ?>">
+
+            <!-- HEADER -->
+            <div class="card-header-custom">
+                <div class="card-icon <?php echo e($skpTerbit ? 'completed' : ''); ?>">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+
+                <div>
+                    <div class="card-title">SK Penunjukan Dosen Pembahas</div>
+                    <div class="card-subtitle">
+                        Diterbitkan dekan setelah kaprodi menetapkan dosen pembahas proposal Anda
+                    </div>
+                </div>
+
+                <!-- STATUS -->
+                <div class="ms-auto">
+                    <?php if($skpTerbit): ?>
+                        <span class="status-badge status-completed">
+                            <i class="fas fa-check-circle"></i> SK Terbit
+                        </span>
+                    <?php elseif($pembahasLengkap): ?>
+                        <span class="status-badge status-pending">
+                            <i class="fas fa-clock"></i> Menunggu SK diterbitkan dekan
+                        </span>
+                    <?php else: ?>
+                        <span class="status-badge status-closed">
+                            <i class="fas fa-lock"></i> Menunggu Pembahas Ditetapkan
+                        </span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- INFO -->
+            <?php if($skpTerbit): ?>
+                <div class="mt-2">
+                    <div class="alert alert-success py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
+                        <i class="fas fa-check-circle me-1"></i>
+                        SK Pembahas sudah terbit. Nomor SK: <strong><?php echo e($proposal->nomor_sk_pembahas); ?></strong>,
+                        tanggal <strong><?php echo e(\App\Models\PengajuanSk::tanggalIndonesia($proposal->tanggal_sk_pembahas)); ?></strong>.
+                    </div>
+                    <?php if(!empty($proposal->kekuranganDataSkPembahas())): ?>
+                        <div class="text-muted mb-2" style="font-size: 0.82rem;">
+                            SK belum dapat diunduh karena data belum lengkap.
+                            <a href="<?php echo e(route('sk-pembahas.show')); ?>">Lihat rinciannya</a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- BUTTON -->
+            <?php if($pembahasLengkap): ?>
+                <div style="text-align: right;">
+                    <a href="<?php echo e(route('sk-pembahas.show')); ?>" class="btn btn-action"
+                       style="width: auto; display: inline-flex; padding: 0.75rem 2rem; background: #fff; color: var(--dark-green); border: 2px solid var(--primary-green);">
+                        <i class="fas fa-eye"></i> Lihat SK
+                    </a>
+                    <?php if($skpTerbit && empty($proposal->kekuranganDataSkPembahas())): ?>
+                        <a href="<?php echo e(route('sk-pembahas.unduh')); ?>" class="btn btn-action btn-primary-custom"
+                           style="width: auto; display: inline-flex; padding: 0.75rem 2rem;">
+                            <i class="fas fa-download"></i> Unduh SK
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+        </div>
+        <?php endif; ?>
+
         <!-- MODAL: PILIH DOSEN LKP -->
         <div class="modal fade" id="pilihDosenLkpModal" tabindex="-1">
             <div class="modal-dialog modal-lg">

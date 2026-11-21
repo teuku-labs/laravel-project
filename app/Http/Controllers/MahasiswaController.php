@@ -243,4 +243,63 @@ class MahasiswaController extends Controller
             ])
             ->deleteFileAfterSend(true);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lihat & unduh SK Pembahas milik sendiri
+    |--------------------------------------------------------------------------
+    */
+    public function skPembahasShow()
+    {
+        $mahasiswa = Mahasiswa::with(['prodi', 'seminarLkp', 'proposal.penguji1', 'proposal.penguji2'])
+            ->where('user_id', Auth::id())->firstOrFail();
+
+        $proposal = $mahasiswa->proposal;
+        if (!$proposal) {
+            return redirect()->route('mahasiswa.dashboard')
+                ->with('error', 'Anda belum mendaftar seminar proposal.');
+        }
+        if (!$proposal->penguji1_id || !$proposal->penguji2_id) {
+            return redirect()->route('mahasiswa.dashboard')
+                ->with('error', 'Dosen pembahas Anda belum ditetapkan oleh kaprodi.');
+        }
+
+        return view('mahasiswa.sk-pembahas', compact('mahasiswa', 'proposal'));
+    }
+
+    public function skPembahasUnduh()
+    {
+        $mahasiswa = Mahasiswa::with(['proposal'])->where('user_id', Auth::id())->firstOrFail();
+        $proposal  = $mahasiswa->proposal;
+
+        if (!$proposal || !$proposal->penguji1_id || !$proposal->penguji2_id) {
+            return redirect()->route('mahasiswa.dashboard')
+                ->with('error', 'Dosen pembahas Anda belum ditetapkan oleh kaprodi.');
+        }
+
+        // Hanya SK milik sendiri yang sudah diterbitkan dekan
+        if (!$proposal->sudahTerbitSkPembahas()) {
+            return redirect()->route('sk-pembahas.show')
+                ->with('error', 'SK Pembahas belum diterbitkan, jadi belum bisa diunduh.');
+        }
+
+        $kurang = $proposal->kekuranganDataSkPembahas();
+        if ($kurang) {
+            return redirect()->route('sk-pembahas.show')
+                ->with('error', 'SK belum bisa diunduh, data belum lengkap: ' . implode(', ', $kurang) . '.');
+        }
+
+        try {
+            $file = $proposal->buatFileSkPembahas();
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect()->route('sk-pembahas.show')->with('error', 'Gagal membuat file SK, silakan coba lagi.');
+        }
+
+        return response()
+            ->download($file, $proposal->namaFileSkPembahas(), [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
+    }
 }

@@ -69,7 +69,13 @@ class PengajuanSk extends Model
      */
     public function taSemester(): string
     {
-        $d = Carbon::parse($this->tanggal_sk ?? $this->created_at ?? now());
+        return self::hitungTaSemester($this->tanggal_sk ?? $this->created_at ?? now());
+    }
+
+    /** Hitung TA Semester dari sebuah tanggal (dipakai juga oleh SK Pembahas). */
+    public static function hitungTaSemester($tanggal): string
+    {
+        $d = Carbon::parse($tanggal);
 
         if ($d->month >= 9) {
             return 'Ganjil ' . $d->year . '/' . ($d->year + 1);
@@ -79,6 +85,16 @@ class PengajuanSk extends Model
         }
 
         return 'Genap ' . ($d->year - 1) . '/' . $d->year;
+    }
+
+    /** Tempat/tanggal lahir dari data LKP, mis. "Bireuen, 15 Desember 2000" (null bila belum lengkap). */
+    public static function formatTtlDariLkp($lkp): ?string
+    {
+        if (!$lkp || blank($lkp->tempat_lahir) || blank($lkp->tanggal_lahir)) {
+            return null;
+        }
+
+        return trim($lkp->tempat_lahir) . ', ' . self::tanggalIndonesia($lkp->tanggal_lahir);
     }
 
     /** Judul TGA diambil dari judul proposal mahasiswa. */
@@ -92,13 +108,7 @@ class PengajuanSk extends Model
     /** Tempat/tanggal lahir diambil dari data pendaftaran LKP, mis. "Bireuen, 15 Desember 2000". */
     public function tempatTanggalLahir(): ?string
     {
-        $lkp = optional($this->mahasiswa)->seminarLkp;
-
-        if (!$lkp || blank($lkp->tempat_lahir) || blank($lkp->tanggal_lahir)) {
-            return null;
-        }
-
-        return trim($lkp->tempat_lahir) . ', ' . self::tanggalIndonesia($lkp->tanggal_lahir);
+        return self::formatTtlDariLkp(optional($this->mahasiswa)->seminarLkp);
     }
 
     /** Daftar data yang masih kurang sehingga SK belum bisa dicetak/diunduh (kosong = lengkap). */
