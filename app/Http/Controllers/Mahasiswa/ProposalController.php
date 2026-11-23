@@ -26,13 +26,13 @@ class ProposalController extends Controller
         }
 
         // Syarat 2: Seminar LKP sudah dinyatakan LULUS
-        // (nilai sudah diinput oleh dosen dan bukan E / rata-rata minimal 50).
+        // (nilai sudah diinput oleh dosen dan minimal C / rata-rata minimal 55).
         $lkp = $mahasiswa->seminarLkp;
         if (!$lkp) {
             return back()->with('error', 'Anda harus mendaftar dan lulus Seminar LKP sebelum mendaftar Seminar Proposal.');
         }
         if (!$lkp->lulus()) {
-            return back()->with('error', 'Seminar LKP Anda belum dinyatakan lulus. Nilai LKP harus sudah diinput oleh dosen dan bukan E.');
+            return back()->with('error', 'Seminar LKP Anda belum dinyatakan lulus. Nilai LKP harus sudah diinput oleh dosen dan minimal C.');
         }
 
         // Syarat 3: belum pernah mendaftar proposal

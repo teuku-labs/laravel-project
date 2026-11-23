@@ -107,8 +107,11 @@
                             <th rowspan="2">Nama</th>
                             <th rowspan="2">NIM</th>
                                                         <th colspan="4">Aspek Penilaian</th>
-                            <th rowspan="2">Rata-rata</th>
-                            <th rowspan="2">Nilai Huruf</th>
+                            <th rowspan="2">Rata-rata Anda</th>
+                            <th rowspan="2">Huruf Anda</th>
+                            <th rowspan="2">Penguji 1</th>
+                            <th rowspan="2">Penguji 2</th>
+                            <th rowspan="2">Nilai Akhir</th>
                             <th rowspan="2">Aksi</th>
                         </tr>
                         <tr>
@@ -118,7 +121,7 @@
                     <tbody>
                         @forelse($proposalList as $i => $pr)
                         @php
-                            $nilai = $pr->nilai;
+                            $nilai = $pr->nilaiOleh($dosen);
                             $formId = 'form-nilai-' . $pr->id;
                             
                         @endphp
@@ -133,10 +136,11 @@
                             <td><input type="number" step="0.01" min="0" max="100" name="sikap_mental" form="{{ $formId }}" class="nilai-input" value="{{ old('sikap_mental', $nilai->sikap_mental ?? '') }}" required></td>
                             <td class="rata-cell">{{ $nilai->rata_rata ?? '-' }}</td>
                             <td><span class="badge-huruf">{{ $nilai->nilai_huruf ?? '-' }}</span></td>
+                            @include('partials.nilai-akhir', ['item' => $pr])
                             <td><button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button></td>
                         </tr>
                         @empty
-                        <tr><td colspan="10"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada proposal yang Anda uji.</p></div></td></tr>
+                        <tr><td colspan="13"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada proposal yang Anda uji.</p></div></td></tr>
                         @endforelse
                     </tbody>
                 </table>

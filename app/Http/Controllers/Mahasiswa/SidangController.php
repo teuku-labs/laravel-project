@@ -21,14 +21,14 @@ class SidangController extends Controller
         }
 
         // Syarat: Seminar Proposal harus sudah didaftarkan DAN dinyatakan lulus
-        // (nilai sudah diinput dan bukan E), sama seperti aturan Seminar LKP -> Proposal.
+        // (nilai sudah diinput dan minimal C), sama seperti aturan Seminar LKP -> Proposal.
         $proposal = $mahasiswa->proposal;
         if (!$proposal) {
             return back()->with('error', 'Anda harus menyelesaikan Seminar Proposal sebelum mendaftar Sidang Skripsi.');
         }
 
         if (!$proposal->lulus()) {
-            return back()->with('error', 'Seminar Proposal Anda belum dinyatakan lulus. Sidang Skripsi bisa didaftar setelah nilai proposal keluar dan lulus.');
+            return back()->with('error', 'Seminar Proposal Anda belum dinyatakan lulus. Sidang Skripsi bisa didaftar setelah nilai akhir proposal dari kedua penguji keluar dengan minimal C.');
         }
 
         // Pendaftaran yang sudah ada: hanya boleh dikirim ulang kalau DITOLAK kaprodi.

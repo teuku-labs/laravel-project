@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SK Pembimbing - Kaprodi</title>
+    <title>Sidang Skripsi - Kaprodi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -31,7 +31,6 @@
         .badge-pending{background:rgba(243,156,18,.15);color:#d68910;padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
         .badge-approved{background:rgba(39,174,96,.15);color:#1e8449;padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
         .badge-rejected{background:rgba(231,76,60,.15);color:#c0392b;padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
-        .badge-waiting{background:rgba(108,92,231,.15);color:var(--primary);padding:.3rem .8rem;border-radius:20px;font-size:.73rem;font-weight:500;}
         .btn-detail{background:var(--primary);color:white;border:none;padding:.4rem .9rem;border-radius:8px;font-size:.8rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;transition:all .3s;}
         .btn-detail:hover{background:var(--dark);color:white;}
         .empty-state{text-align:center;padding:2.5rem;color:var(--muted);}
@@ -45,66 +44,65 @@
     </style>
 </head>
 <body>
-@include('kaprodi.partials.sidebar')
+<?php echo $__env->make('kaprodi.partials.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
 <div class="main">
     <nav class="topbar">
-        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="color:var(--muted);font-size:.9rem;">SK Pembimbing</span></div>
-        <div style="display:flex;align-items:center;gap:.75rem;"><div class="avatar">{{ substr($kaprodi->nama ?? 'K', 0, 1) }}</div><div><div style="font-weight:600;font-size:.9rem;">{{ $kaprodi->nama }}</div><div style="font-size:.75rem;color:var(--muted);">Kaprodi</div></div></div>
+        <div style="display:flex;align-items:center;gap:1rem;"><button class="toggle-btn" id="sidebarToggle"><i class="fas fa-bars"></i></button><span style="color:var(--muted);font-size:.9rem;">Sidang Skripsi</span></div>
+        <div style="display:flex;align-items:center;gap:.75rem;"><div class="avatar"><?php echo e(substr($kaprodi->nama ?? 'K', 0, 1)); ?></div><div><div style="font-weight:600;font-size:.9rem;"><?php echo e($kaprodi->nama); ?></div><div style="font-size:.75rem;color:var(--muted);">Kaprodi</div></div></div>
     </nav>
 
     <div class="content">
-        @if(session('success'))<div class="alert alert-success alert-dismissible fade show mb-3"><i class="fas fa-check-circle me-2"></i>{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
-        @if(session('error'))<div class="alert alert-danger alert-dismissible fade show mb-3"><i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>@endif
+        <?php if(session('success')): ?><div class="alert alert-success alert-dismissible fade show mb-3"><i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
+        <?php if(session('error')): ?><div class="alert alert-danger alert-dismissible fade show mb-3"><i class="fas fa-exclamation-circle me-2"></i><?php echo e(session('error')); ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
 
-        <div style="margin-bottom:2rem;"><h2 style="font-weight:700;">SK Pembimbing</h2><p style="color:var(--muted);font-size:.9rem;">Pengajuan SK yang sudah diverifikasi admin dan menunggu persetujuan Kaprodi</p></div>
+        <div style="margin-bottom:2rem;"><h2 style="font-weight:700;">Sidang Skripsi</h2><p style="color:var(--muted);font-size:.9rem;">Pengajuan sidang yang sudah diverifikasi admin dan menunggu keputusan Kaprodi</p></div>
 
         <div class="stats-grid">
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(243,156,18,.12);color:#f39c12"><i class="fas fa-clock"></i></div><div><div class="stat-value">{{ $pengajuanSks->where('kaprodi_approved',false)->where('kaprodi_rejected',false)->count() }}</div><div class="stat-label">Menunggu</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(39,174,96,.12);color:#27ae60"><i class="fas fa-check-circle"></i></div><div><div class="stat-value">{{ $pengajuanSks->where('kaprodi_approved',true)->count() }}</div><div class="stat-label">Disetujui</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(231,76,60,.12);color:#e74c3c"><i class="fas fa-times-circle"></i></div><div><div class="stat-value">{{ $pengajuanSks->where('kaprodi_rejected',true)->count() }}</div><div class="stat-label">Ditolak</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:rgba(108,92,231,.12);color:var(--primary)"><i class="fas fa-list"></i></div><div><div class="stat-value">{{ $pengajuanSks->total() }}</div><div class="stat-label">Total</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(243,156,18,.12);color:#f39c12"><i class="fas fa-clock"></i></div><div><div class="stat-value"><?php echo e($sidangs->where('kaprodi_approved',false)->where('kaprodi_rejected',false)->count()); ?></div><div class="stat-label">Menunggu</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(39,174,96,.12);color:#27ae60"><i class="fas fa-check-circle"></i></div><div><div class="stat-value"><?php echo e($sidangs->where('kaprodi_approved',true)->count()); ?></div><div class="stat-label">Disetujui</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(231,76,60,.12);color:#e74c3c"><i class="fas fa-times-circle"></i></div><div><div class="stat-value"><?php echo e($sidangs->where('kaprodi_rejected',true)->count()); ?></div><div class="stat-label">Ditolak</div></div></div>
+            <div class="stat-card"><div class="stat-icon" style="background:rgba(108,92,231,.12);color:var(--primary)"><i class="fas fa-list"></i></div><div><div class="stat-value"><?php echo e($sidangs->total()); ?></div><div class="stat-label">Total</div></div></div>
         </div>
 
         <div class="table-card">
             <div class="table-header">
-                <strong>Daftar Pengajuan SK</strong>
-                <span style="font-size:.83rem;color:var(--muted);">{{ $pengajuanSks->total() }} pengajuan</span>
+                <strong>Daftar Pengajuan Sidang</strong>
+                <span style="font-size:.83rem;color:var(--muted);"><?php echo e($sidangs->total()); ?> pengajuan</span>
             </div>
             <div class="table-responsive">
                 <table class="custom-table">
-                    <thead><tr><th>No</th><th>Mahasiswa</th><th>NIM</th><th>Pembimbing 1</th><th>Pembimbing 2</th><th>Nomor SK</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <thead><tr><th>No</th><th>Mahasiswa</th><th>NIM</th><th>Judul Skripsi</th><th>Pembimbing</th><th>Status</th><th>Aksi</th></tr></thead>
                     <tbody>
-                        @forelse($pengajuanSks as $i => $p)
+                        <?php $__empty_1 = true; $__currentLoopData = $sidangs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr>
-                            <td>{{ $pengajuanSks->firstItem() + $i }}</td>
-                            <td><strong>{{ $p->mahasiswa->nama ?? '-' }}</strong></td>
-                            <td>{{ $p->mahasiswa->nim ?? '-' }}</td>
-                            <td>{{ $p->pembimbing1->nama ?? '-' }}</td>
-                            <td>{{ $p->pembimbing2->nama ?? '-' }}</td>
-                            <td><code>{{ $p->nomor_sk ?? '-' }}</code></td>
+                            <td><?php echo e($sidangs->firstItem() + $i); ?></td>
+                            <td><strong><?php echo e($s->mahasiswa->nama ?? '-'); ?></strong></td>
+                            <td><?php echo e($s->mahasiswa->nim ?? '-'); ?></td>
+                            <td><?php echo e(Str::limit($s->judul_skripsi ?? '-', 35)); ?></td>
+                            <td><?php echo e($s->pembimbing->nama ?? '-'); ?></td>
                             <td>
-                                @if($p->kaprodi_approved)
+                                <?php if($s->kaprodi_approved): ?>
                                     <span class="badge-approved"><i class="fas fa-check"></i> Disetujui</span>
-                                @elseif($p->kaprodi_rejected)
+                                <?php elseif($s->kaprodi_rejected): ?>
                                     <span class="badge-rejected"><i class="fas fa-times"></i> Ditolak</span>
-                                @else
+                                <?php else: ?>
                                     <span class="badge-pending"><i class="fas fa-clock"></i> Menunggu</span>
-                                @endif
+                                <?php endif; ?>
                             </td>
-                            <td><a href="{{ route('kaprodi.sk-pembimbing.show', $p->id) }}" class="btn-detail"><i class="fas fa-eye"></i> Detail</a></td>
+                            <td><a href="<?php echo e(route('kaprodi.sidang.show', $s->id)); ?>" class="btn-detail"><i class="fas fa-eye"></i> Detail</a></td>
                         </tr>
-                        @empty
-                        <tr><td colspan="8"><div class="empty-state"><i class="fas fa-file-signature"></i><p>Belum ada pengajuan SK yang perlu ditinjau.</p></div></td></tr>
-                        @endforelse
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                        <tr><td colspan="7"><div class="empty-state"><i class="fas fa-gavel"></i><p>Belum ada pengajuan sidang yang perlu ditinjau.</p></div></td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-            <div style="margin-top:1rem;">{{ $pengajuanSks->links() }}</div>
+            <div style="margin-top:1rem;"><?php echo e($sidangs->links()); ?></div>
         </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>document.getElementById('sidebarToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('show'));</script>
 </body>
-</html>
+</html><?php /**PATH C:\laragon\www\seminar-apk\resources\views/kaprodi/sidang/index.blade.php ENDPATH**/ ?>

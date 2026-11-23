@@ -835,204 +835,6 @@
 
         </div>
       
-        <!-- SECTION: SK Pembimbing -->
-        <h5 class="section-title" style="margin-top: 2rem;">
-            <i class="fas fa-file-signature"></i>
-            SK Pembimbing Tugas Akhir
-        </h5>
-
-        <?php
-            $sk          = $mahasiswa->pengajuanSk;
-            $skTerbit    = $sk && $sk->sudahTerbit();
-            $skDitolak   = $sk && $sk->kaprodi_rejected;
-            $skDisetujui = $sk && $sk->kaprodi_approved;
-            $bolehAjukan = $jumlah >= 2 && (!$sk || $skDitolak);
-        ?>
-
-        <div class="full-width-card <?php echo e($skTerbit ? 'completed' : ''); ?>">
-
-            <!-- HEADER -->
-            <div class="card-header-custom">
-                <div class="card-icon <?php echo e($skTerbit ? 'completed' : ''); ?>">
-                    <i class="fas fa-file-signature"></i>
-                </div>
-
-                <div>
-                    <div class="card-title">Pengajuan SK Penunjukan Pembimbing</div>
-                    <div class="card-subtitle">
-                        SK diajukan setelah kedua dosen pembimbing menyetujui, lalu diproses kaprodi dan dekan
-                    </div>
-                </div>
-
-                <!-- STATUS -->
-                <div class="ms-auto">
-                    <?php if($skTerbit): ?>
-                        <span class="status-badge status-completed">
-                            <i class="fas fa-check-circle"></i> SK Terbit
-                        </span>
-                    <?php elseif($skDisetujui): ?>
-                        <span class="status-badge status-pending">
-                            <i class="fas fa-clock"></i> Menunggu SK diterbitkan dekan
-                        </span>
-                    <?php elseif($skDitolak): ?>
-                        <span class="status-badge" style="background: rgba(231, 76, 60, 0.15); color: #e74c3c;">
-                            <i class="fas fa-times-circle"></i> Ditolak Kaprodi
-                        </span>
-                    <?php elseif($sk): ?>
-                        <span class="status-badge status-pending">
-                            <i class="fas fa-clock"></i> Menunggu persetujuan kaprodi
-                        </span>
-                    <?php elseif($jumlah < 2): ?>
-                        <span class="status-badge status-closed">
-                            <i class="fas fa-lock"></i> Menunggu 2 Pembimbing
-                        </span>
-                    <?php else: ?>
-                        <span class="status-badge status-open">
-                            <i class="fas fa-exclamation-circle"></i> Belum Diajukan
-                        </span>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- INFO -->
-            <?php if($skTerbit || $skDitolak): ?>
-                <div class="mt-2">
-                    <?php if($skTerbit): ?>
-                        <div class="alert alert-success py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
-                            <i class="fas fa-check-circle me-1"></i>
-                            SK Pembimbing sudah terbit. Nomor SK: <strong><?php echo e($sk->nomor_sk); ?></strong>,
-                            tanggal <strong><?php echo e(\App\Models\PengajuanSk::tanggalIndonesia($sk->tanggal_sk)); ?></strong>.
-                        </div>
-                        <?php if(!empty($sk->kekuranganData())): ?>
-                            <div class="text-muted mb-2" style="font-size: 0.82rem;">
-                                SK belum dapat diunduh karena data belum lengkap.
-                                <a href="<?php echo e(route('sk.show')); ?>">Lihat rinciannya</a>
-                            </div>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <div class="alert alert-danger py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
-                            <i class="fas fa-times-circle me-1"></i>
-                            Pengajuan SK ditolak kaprodi.
-                            <?php if($sk->catatan_kaprodi): ?> Catatan: <strong><?php echo e($sk->catatan_kaprodi); ?></strong>. <?php endif; ?>
-                            Silakan perbaiki lalu ajukan kembali.
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-            <!-- BUTTON -->
-            <div style="text-align: right;">
-                <?php if($sk): ?>
-                    <a href="<?php echo e(route('sk.show')); ?>" class="btn btn-action"
-                       style="width: auto; display: inline-flex; padding: 0.75rem 2rem; background: #fff; color: var(--dark-green); border: 2px solid var(--primary-green);">
-                        <i class="fas fa-eye"></i> Lihat SK
-                    </a>
-                <?php endif; ?>
-                <?php if($skTerbit && empty($sk->kekuranganData())): ?>
-                    <a href="<?php echo e(route('sk.unduh')); ?>" class="btn btn-action btn-primary-custom"
-                       style="width: auto; display: inline-flex; padding: 0.75rem 2rem;">
-                        <i class="fas fa-download"></i> Unduh SK
-                    </a>
-                <?php endif; ?>
-                <form action="<?php echo e(route('sk.ajukan')); ?>" method="POST" style="display: inline;"
-                      onsubmit="return confirm('Ajukan SK Pembimbing sekarang?');">
-                    <?php echo csrf_field(); ?>
-                    <button type="submit" class="btn btn-action btn-primary-custom"
-                            <?php echo e($bolehAjukan ? '' : 'disabled'); ?>
-
-                            style="width: auto; display: inline-flex; padding: 0.75rem 2rem;">
-                        <i class="fas fa-paper-plane"></i>
-                        <?php if($skDitolak): ?> Ajukan Ulang SK
-                        <?php elseif($sk): ?> SK Sudah Diajukan
-                        <?php else: ?> Ajukan SK
-                        <?php endif; ?>
-                    </button>
-                </form>
-            </div>
-
-        </div>
-
-        <!-- SECTION: SK Pembahas -->
-        <?php if($proposal): ?>
-        <?php
-            $pembahasLengkap = $proposal->penguji1_id && $proposal->penguji2_id;
-            $skpTerbit       = $proposal->sudahTerbitSkPembahas();
-        ?>
-
-        <h5 class="section-title" style="margin-top: 2rem;">
-            <i class="fas fa-file-signature"></i>
-            SK Pembahas
-        </h5>
-
-        <div class="full-width-card <?php echo e($skpTerbit ? 'completed' : ''); ?>">
-
-            <!-- HEADER -->
-            <div class="card-header-custom">
-                <div class="card-icon <?php echo e($skpTerbit ? 'completed' : ''); ?>">
-                    <i class="fas fa-file-signature"></i>
-                </div>
-
-                <div>
-                    <div class="card-title">SK Penunjukan Dosen Pembahas</div>
-                    <div class="card-subtitle">
-                        Diterbitkan dekan setelah kaprodi menetapkan dosen pembahas proposal Anda
-                    </div>
-                </div>
-
-                <!-- STATUS -->
-                <div class="ms-auto">
-                    <?php if($skpTerbit): ?>
-                        <span class="status-badge status-completed">
-                            <i class="fas fa-check-circle"></i> SK Terbit
-                        </span>
-                    <?php elseif($pembahasLengkap): ?>
-                        <span class="status-badge status-pending">
-                            <i class="fas fa-clock"></i> Menunggu SK diterbitkan dekan
-                        </span>
-                    <?php else: ?>
-                        <span class="status-badge status-closed">
-                            <i class="fas fa-lock"></i> Menunggu Pembahas Ditetapkan
-                        </span>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- INFO -->
-            <?php if($skpTerbit): ?>
-                <div class="mt-2">
-                    <div class="alert alert-success py-2 px-3 mb-2" style="border-radius: 10px; font-size: 0.85rem;">
-                        <i class="fas fa-check-circle me-1"></i>
-                        SK Pembahas sudah terbit. Nomor SK: <strong><?php echo e($proposal->nomor_sk_pembahas); ?></strong>,
-                        tanggal <strong><?php echo e(\App\Models\PengajuanSk::tanggalIndonesia($proposal->tanggal_sk_pembahas)); ?></strong>.
-                    </div>
-                    <?php if(!empty($proposal->kekuranganDataSkPembahas())): ?>
-                        <div class="text-muted mb-2" style="font-size: 0.82rem;">
-                            SK belum dapat diunduh karena data belum lengkap.
-                            <a href="<?php echo e(route('sk-pembahas.show')); ?>">Lihat rinciannya</a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-            <!-- BUTTON -->
-            <?php if($pembahasLengkap): ?>
-                <div style="text-align: right;">
-                    <a href="<?php echo e(route('sk-pembahas.show')); ?>" class="btn btn-action"
-                       style="width: auto; display: inline-flex; padding: 0.75rem 2rem; background: #fff; color: var(--dark-green); border: 2px solid var(--primary-green);">
-                        <i class="fas fa-eye"></i> Lihat SK
-                    </a>
-                    <?php if($skpTerbit && empty($proposal->kekuranganDataSkPembahas())): ?>
-                        <a href="<?php echo e(route('sk-pembahas.unduh')); ?>" class="btn btn-action btn-primary-custom"
-                           style="width: auto; display: inline-flex; padding: 0.75rem 2rem;">
-                            <i class="fas fa-download"></i> Unduh SK
-                        </a>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-
-        </div>
-        <?php endif; ?>
-
         <!-- MODAL: PILIH DOSEN LKP -->
         <div class="modal fade" id="pilihDosenLkpModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
@@ -1188,7 +990,7 @@
                             <i class="fas fa-circle"></i> 2 Dosen Pembimbing
                         </li>
                         <li class="<?php echo e($status['lkp_lulus'] ?? false ? 'checked' : ''); ?>">
-                            <i class="fas fa-circle"></i> Lulus Seminar LKP (nilai sudah diinput &amp; bukan E)
+                            <i class="fas fa-circle"></i> Lulus Seminar LKP (nilai sudah diinput &amp; minimal C)
                         </li>
                     </ul>
                 </div>
@@ -1251,7 +1053,7 @@
                 <div class="requirements" style="margin: 0 0 1rem 0; padding: 0.75rem 1rem;">
                     <ul>
                         <li class="<?php echo e($status['proposal_lulus'] ?? false ? 'checked' : ''); ?>">
-                            <i class="fas fa-circle"></i> Lulus Seminar Proposal
+                            <i class="fas fa-circle"></i> Lulus Seminar Proposal (nilai akhir minimal C)
                         </li>
                         <li class="<?php echo e($status['sidang'] ?? false ? 'checked' : ''); ?>">
                             <i class="fas fa-circle"></i> Skripsi Lengkap

@@ -12,13 +12,20 @@ use App\Models\PengajuanSk;
 use App\Models\Sidang;
 use App\Models\PengajuanPembimbing;
 use App\Models\Dosen;
+use App\Traits\SkSebagaiDosenTrait;
 use App\Models\NilaiSeminarLkp;
 use App\Models\Proposal;
 use App\Models\NilaiProposal;
 use App\Models\NilaiSidang;
+use App\Models\YudisiumSk;
+use App\Models\YudisiumSkMahasiswa;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class KaprodiController extends Controller
 {
+    use SkSebagaiDosenTrait;
+
     private function getKaprodi()
     {
         return Kaprodi::where('user_id', Auth::id())->first();
@@ -381,7 +388,7 @@ class KaprodiController extends Controller
         $dosenSaya = $this->getDosenSaya();
 
         $proposalList = Proposal::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->with(['mahasiswa', 'pembimbing1', 'nilai'])
+            ->with(['mahasiswa', 'pembimbing1', 'penguji1', 'penguji2', 'nilaiPenguji'])
             ->latest()->get();
 
         return view('kaprodi.nilai-proposal', compact('kaprodi', 'proposalList', 'dosenSaya'));
@@ -413,7 +420,7 @@ class KaprodiController extends Controller
         $nilaiHuruf = NilaiProposal::hitungNilaiHuruf($rataRata);
 
         NilaiProposal::updateOrCreate(
-            ['proposal_id' => $proposal->id],
+            ['proposal_id' => $proposal->id, 'dosen_id' => $dosenSaya->id],
             [
                 'isi_materi'        => $request->isi_materi,
                 'penyajian'         => $request->penyajian,
@@ -442,7 +449,7 @@ class KaprodiController extends Controller
         $dosenSaya = $this->getDosenSaya();
 
         $sidangList = Sidang::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->with(['mahasiswa', 'pembimbing', 'nilai'])
+            ->with(['mahasiswa', 'pembimbing', 'penguji1', 'penguji2', 'nilaiPenguji'])
             ->latest()->get();
 
         return view('kaprodi.nilai-sidang', compact('kaprodi', 'sidangList', 'dosenSaya'));
@@ -474,7 +481,7 @@ class KaprodiController extends Controller
         $nilaiHuruf = NilaiSidang::hitungNilaiHuruf($rataRata);
 
         NilaiSidang::updateOrCreate(
-            ['sidang_id' => $sidang->id],
+            ['sidang_id' => $sidang->id, 'dosen_id' => $dosenSaya->id],
             [
                 'isi_materi'        => $request->isi_materi,
                 'penyajian'         => $request->penyajian,
@@ -492,68 +499,103 @@ class KaprodiController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | SK PEMBIMBING
+    | TERUSKAN SK KE DEKAN (SK Pembimbing + SK Pembahas)
+    | Mahasiswa tidak mengajukan. Setelah kedua dosen pembahas menginput
+    | seluruh nilai seminar proposal, kaprodi meneruskan ke dekan untuk dibuatkan SK.
     |--------------------------------------------------------------------------
     */
-    public function skPembimbingIndex()
+    private function mahasiswaSkQuery($kaprodi)
     {
-        $kaprodi = $this->getKaprodi();
-        if (!$kaprodi) return redirect()->route('login');
-
-        $pengajuanSks = PengajuanSk::with(['mahasiswa', 'pembimbing1', 'pembimbing2'])
-            ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)
-            ->latest()->paginate(15);
-
-        return view('kaprodi.sk-pembimbing.index', compact('kaprodi', 'pengajuanSks'));
+        return Mahasiswa::with([
+                'prodi', 'pembimbing1', 'pembimbing2', 'pengajuanSk',
+                'proposal.nilaiPenguji', 'proposal.penguji1', 'proposal.penguji2',
+            ])
+            ->where('prodi_id', $kaprodi->prodi_id)
+            ->whereHas('proposal');
     }
 
-    public function skPembimbingShow($id)
+    private function teruskanKeDekan(Mahasiswa $m): void
     {
-        $kaprodi = $this->getKaprodi();
-        if (!$kaprodi) return redirect()->route('login');
+        \Illuminate\Support\Facades\DB::transaction(function () use ($m) {
+            PengajuanSk::updateOrCreate(
+                ['mahasiswa_id' => $m->id],
+                [
+                    'pembimbing1_id'   => $m->pembimbing1_id,
+                    'pembimbing2_id'   => $m->pembimbing2_id,
+                    'admin_verified'   => true,
+                    'kaprodi_approved' => true,
+                    'kaprodi_rejected' => false,
+                    'catatan_kaprodi'  => null,
+                ]
+            );
 
-        $pengajuan = PengajuanSk::with(['mahasiswa', 'pembimbing1', 'pembimbing2'])
-            ->whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)->findOrFail($id);
-
-        return view('kaprodi.sk-pembimbing.show', compact('kaprodi', 'pengajuan'));
+            $m->proposal->update(['sk_pembahas_diteruskan_at' => now()]);
+        });
     }
 
-    public function skPembimbingApprove($id)
+    public function skDekanIndex()
     {
         $kaprodi = $this->getKaprodi();
         if (!$kaprodi) return redirect()->route('login');
 
-        $pengajuan = PengajuanSk::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)->findOrFail($id);
+        $baris = $this->mahasiswaSkQuery($kaprodi)->get()->map(function ($m) {
+            $kurang     = $m->kekuranganSkDekan();
+            $diteruskan = $m->sudahDiteruskanKeDekan();
 
-        $pengajuan->update([
-            'kaprodi_approved' => true,
-            'kaprodi_rejected' => false,
-            'catatan_kaprodi'  => null,
-        ]);
+            return (object) [
+                'm'          => $m,
+                'nilai'      => $m->statusNilaiProposal(),
+                'kurang'     => $kurang,
+                'diteruskan' => $diteruskan,
+                'siap'       => !$diteruskan && empty($kurang),
+            ];
+        })->sortBy(fn ($b) => [$b->siap ? 0 : ($b->diteruskan ? 2 : 1), mb_strtolower($b->m->nama)])->values();
 
-        return back()->with('success', 'Pengajuan SK Pembimbing berhasil disetujui.');
+        $jumlahSiap       = $baris->where('siap', true)->count();
+        $jumlahDiteruskan = $baris->where('diteruskan', true)->count();
+        $jumlahBelum      = $baris->count() - $jumlahSiap - $jumlahDiteruskan;
+
+        return view('kaprodi.sk-dekan.index', compact('kaprodi', 'baris', 'jumlahSiap', 'jumlahBelum', 'jumlahDiteruskan'));
     }
 
-    public function skPembimbingReject(Request $request, $id)
+    public function skDekanTeruskan($id)
     {
         $kaprodi = $this->getKaprodi();
         if (!$kaprodi) return redirect()->route('login');
 
-        $request->validate(['catatan_kaprodi' => 'required|string|max:500']);
+        $m = $this->mahasiswaSkQuery($kaprodi)->findOrFail($id);
 
-        $pengajuan = PengajuanSk::whereHas('mahasiswa', fn($q) => $q->where('prodi_id', $kaprodi->prodi_id))
-            ->where('admin_verified', true)->findOrFail($id);
+        if ($m->sudahDiteruskanKeDekan()) {
+            return back()->withErrors(['sk' => 'SK ' . $m->nama . ' sudah diteruskan ke dekan.']);
+        }
 
-        $pengajuan->update([
-            'kaprodi_rejected' => true,
-            'kaprodi_approved' => false,
-            'catatan_kaprodi'  => $request->catatan_kaprodi,
-        ]);
+        $kurang = $m->kekuranganSkDekan();
+        if ($kurang) {
+            return back()->withErrors(['sk' => 'Belum bisa diteruskan: ' . implode('; ', $kurang) . '.']);
+        }
 
-        return back()->with('success', 'Pengajuan SK Pembimbing ditolak.');
+        $this->teruskanKeDekan($m);
+
+        return back()->with('success', 'SK ' . $m->nama . ' berhasil diteruskan ke dekan.');
+    }
+
+    public function skDekanTeruskanSemua()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $siap = $this->mahasiswaSkQuery($kaprodi)->get()
+            ->filter(fn ($m) => !$m->sudahDiteruskanKeDekan() && empty($m->kekuranganSkDekan()));
+
+        if ($siap->isEmpty()) {
+            return back()->withErrors(['sk' => 'Tidak ada mahasiswa yang siap diteruskan.']);
+        }
+
+        foreach ($siap as $m) {
+            $this->teruskanKeDekan($m);
+        }
+
+        return back()->with('success', $siap->count() . ' mahasiswa berhasil diteruskan ke dekan.');
     }
 
     /*
@@ -803,6 +845,42 @@ class KaprodiController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | DOWNLOAD SK (sebagai pembimbing / pembahas)
+    |--------------------------------------------------------------------------
+    | Sama seperti halaman "Download SK" milik dosen: hanya SK yang memuat nama
+    | akun ini, dan baru bisa diunduh setelah diterbitkan dekan.
+    */
+    public function skSaya()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $dosen   = $this->getDosenSaya();
+        $skItems = $dosen
+            ? $this->skItemsUntukDosen($dosen, 'kaprodi.sk-saya.pembimbing.unduh', 'kaprodi.sk-saya.pembahas.unduh')
+            : collect();
+
+        return view('kaprodi.sk-saya', [
+            'kaprodi'          => $kaprodi,
+            'skItems'          => $skItems,
+            'punyaDataDosen'   => (bool) $dosen,
+            'jumlahPembimbing' => $skItems->where('jenis', 'SK Pembimbing')->count(),
+            'jumlahPembahas'   => $skItems->where('jenis', 'SK Pembahas')->count(),
+        ]);
+    }
+
+    public function skSayaPembimbingUnduh($id)
+    {
+        return $this->unduhSkPembimbingSaya($this->getDosenSaya(), $id, 'kaprodi.sk-saya');
+    }
+
+    public function skSayaPembahasUnduh($id)
+    {
+        return $this->unduhSkPembahasSaya($this->getDosenSaya(), $id, 'kaprodi.sk-saya');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | PROFILE
     |--------------------------------------------------------------------------
     */
@@ -817,5 +895,178 @@ class KaprodiController extends Controller
                                 ->where('status', 'pending')->count();
 
         return view('kaprodi.profile', compact('kaprodi', 'mahasiswaBimbingan', 'pengajuanBaru'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SK YUDISIUM
+    | 1) Halaman "Yudisium": mahasiswa prodi yang sudah lulus sidang (semua penguji
+    |    sudah menilai) muncul otomatis. Kaprodi mencentang, mengisi IPK, memeriksa
+    |    tempat/tanggal lahir (default dari data LKP), lalu mengajukan ke dekan.
+    | 2) Dekan mengisi nomor + tanggal SK.
+    | 3) Halaman "SK Yudisium": SK terbit beserta lampiran nama dilihat/diunduh di sini.
+    |--------------------------------------------------------------------------
+    */
+    private function sidangYudisiumQuery($kaprodi)
+    {
+        return Sidang::with(['mahasiswa.prodi', 'mahasiswa.seminarLkp', 'penguji1', 'penguji2', 'nilaiPenguji'])
+            ->whereHas('mahasiswa', fn ($q) => $q->where('prodi_id', $kaprodi->prodi_id));
+    }
+
+    public function yudisiumIndex()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $belumMasukSk = $this->sidangYudisiumQuery($kaprodi)->whereNull('yudisium_sk_id')->get();
+
+        $kandidat = $belumMasukSk
+            ->filter(fn ($s) => $s->lulus())
+            ->sortBy(fn ($s) => mb_strtolower(optional($s->mahasiswa)->nama ?? ''))
+            ->values();
+
+        $belumLulus = $belumMasukSk->count() - $kandidat->count();
+
+        $menunggu = YudisiumSk::where('prodi_id', $kaprodi->prodi_id)
+            ->where('status', YudisiumSk::DIAJUKAN)
+            ->withCount('anggota')
+            ->orderByDesc('diajukan_at')
+            ->get();
+
+        $jumlahTerbit = YudisiumSk::where('prodi_id', $kaprodi->prodi_id)
+            ->where('status', YudisiumSk::TERBIT)->count();
+
+        return view('kaprodi.yudisium.index', compact('kaprodi', 'kandidat', 'belumLulus', 'menunggu', 'jumlahTerbit'));
+    }
+
+    public function yudisiumAjukan(Request $request)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $ids = array_values(array_unique(array_map('intval', (array) $request->input('sidang_ids', []))));
+        if (empty($ids)) {
+            return back()->withInput()->withErrors(['sidang_ids' => 'Pilih minimal satu mahasiswa.']);
+        }
+
+        // Server memeriksa ulang: milik prodi kaprodi ini, benar-benar lulus, dan belum masuk pengajuan lain.
+        $sidangs = $this->sidangYudisiumQuery($kaprodi)
+            ->whereIn('id', $ids)
+            ->whereNull('yudisium_sk_id')
+            ->get()
+            ->filter(fn ($s) => $s->lulus())
+            ->keyBy('id');
+
+        if ($sidangs->count() !== count($ids)) {
+            return back()->withInput()->withErrors(['sidang_ids' => 'Ada mahasiswa yang dipilih tidak memenuhi syarat atau sudah masuk pengajuan lain. Muat ulang halaman lalu coba lagi.']);
+        }
+
+        // IPK boleh ditulis dengan koma (3,89).
+        $request->merge(['ipk' => array_map(fn ($v) => str_replace(',', '.', trim((string) $v)), (array) $request->input('ipk', []))]);
+
+        $rules = $messages = [];
+        foreach ($sidangs as $id => $s) {
+            $nama = optional($s->mahasiswa)->nama ?? ('ID ' . $id);
+
+            $rules["ipk.$id"]           = ['required', 'numeric', 'between:0,4', 'regex:/^\d(\.\d{1,2})?$/'];
+            $rules["tempat_lahir.$id"]  = ['required', 'string', 'max:100'];
+            $rules["tanggal_lahir.$id"] = ['required', 'date', 'before:today'];
+
+            $messages["ipk.$id.required"]           = "IPK $nama wajib diisi.";
+            $messages["ipk.$id.numeric"]            = "IPK $nama harus berupa angka.";
+            $messages["ipk.$id.between"]            = "IPK $nama harus antara 0,00 dan 4,00.";
+            $messages["ipk.$id.regex"]              = "IPK $nama maksimal dua angka di belakang koma.";
+            $messages["tempat_lahir.$id.required"]  = "Tempat lahir $nama wajib diisi.";
+            $messages["tempat_lahir.$id.max"]       = "Tempat lahir $nama maksimal 100 karakter.";
+            $messages["tanggal_lahir.$id.required"] = "Tanggal lahir $nama wajib diisi.";
+            $messages["tanggal_lahir.$id.date"]     = "Tanggal lahir $nama tidak valid.";
+            $messages["tanggal_lahir.$id.before"]   = "Tanggal lahir $nama harus sebelum hari ini.";
+        }
+        Validator::make($request->all(), $rules, $messages)->validate();
+
+        DB::transaction(function () use ($kaprodi, $sidangs, $request) {
+            $sk = YudisiumSk::create([
+                'prodi_id'    => $kaprodi->prodi_id,
+                'status'      => YudisiumSk::DIAJUKAN,
+                'diajukan_at' => now(),
+            ]);
+
+            foreach ($sidangs as $id => $s) {
+                YudisiumSkMahasiswa::create([
+                    'yudisium_sk_id' => $sk->id,
+                    'sidang_id'      => $id,
+                    'ipk'            => $request->input("ipk.$id"),
+                    'tempat_lahir'   => trim($request->input("tempat_lahir.$id")),
+                    'tanggal_lahir'  => $request->input("tanggal_lahir.$id"),
+                ]);
+            }
+
+            Sidang::whereIn('id', $sidangs->keys())->update(['yudisium_sk_id' => $sk->id]);
+        });
+
+        return redirect()->route('kaprodi.yudisium.index')
+            ->with('success', $sidangs->count() . ' mahasiswa berhasil diajukan ke dekan untuk SK Yudisium.');
+    }
+
+    /** Menarik kembali pengajuan yang belum diproses dekan (mis. salah isi IPK). */
+    public function yudisiumBatal($id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $sk = YudisiumSk::where('prodi_id', $kaprodi->prodi_id)->find($id);
+        if (!$sk) {
+            return back()->withErrors(['sk' => 'Pengajuan tidak ditemukan.']);
+        }
+        if ($sk->status !== YudisiumSk::DIAJUKAN) {
+            return back()->withErrors(['sk' => 'Pengajuan ini sudah diproses dekan dan tidak bisa ditarik kembali.']);
+        }
+
+        DB::transaction(function () use ($sk) {
+            Sidang::where('yudisium_sk_id', $sk->id)->update(['yudisium_sk_id' => null]);
+            $sk->delete(); // baris lampiran ikut terhapus (cascade)
+        });
+
+        return back()->with('success', 'Pengajuan ditarik kembali. Mahasiswanya kembali ke daftar siap diajukan.');
+    }
+
+    public function yudisiumSkIndex()
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        $daftar = YudisiumSk::with(['prodi', 'anggota.sidang.mahasiswa'])
+            ->withCount('anggota')
+            ->where('prodi_id', $kaprodi->prodi_id)
+            ->get()
+            ->sortBy(fn ($sk) => -1 * ($sk->diajukan_at ? $sk->diajukan_at->timestamp : $sk->id))
+            ->values();
+
+        return view('kaprodi.sk-yudisium.index', compact('kaprodi', 'daftar'));
+    }
+
+    public function yudisiumSkUnduh($id)
+    {
+        $kaprodi = $this->getKaprodi();
+        if (!$kaprodi) return redirect()->route('login');
+
+        // Hanya SK prodi sendiri yang sudah terbit (nomor + tanggal diisi dekan).
+        $sk = YudisiumSk::with('prodi')
+            ->where('prodi_id', $kaprodi->prodi_id)
+            ->where('status', YudisiumSk::TERBIT)
+            ->findOrFail($id);
+
+        try {
+            $file = $sk->buatFileSk();
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withErrors(['sk' => 'Gagal membuat file SK, silakan coba lagi.']);
+        }
+
+        return response()
+            ->download($file, $sk->namaFileSk(), [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
     }
 }

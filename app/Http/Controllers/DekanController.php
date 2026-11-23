@@ -12,14 +12,18 @@ use App\Models\Proposal;
 use App\Models\Sidang;
 use App\Models\PengajuanPembimbing;
 use App\Models\Dosen;
+use App\Traits\SkSebagaiDosenTrait;
 use App\Models\NilaiSeminarLkp;
 use App\Models\NilaiProposal;
 use App\Models\NilaiSidang;
 use App\Models\PengajuanSk;
+use App\Models\YudisiumSk;
 use App\Support\SkDocx;
 
 class DekanController extends Controller
 {
+    use SkSebagaiDosenTrait;
+
     /**
      * Ambil data dekan yang sedang login beserta relasinya.
      * PERBAIKAN: Menambahkan ->with(['user', 'prodi']) untuk eager loading
@@ -179,7 +183,7 @@ class DekanController extends Controller
 
         $dosenSaya = $this->getDosenSaya();
 
-        $proposalList = Proposal::with(['mahasiswa', 'pembimbing1', 'nilai'])->latest()->get();
+        $proposalList = Proposal::with(['mahasiswa', 'pembimbing1', 'penguji1', 'penguji2', 'nilaiPenguji'])->latest()->get();
 
         return view('dekan.nilai-proposal', compact('dekan', 'proposalList', 'dosenSaya'));
     }
@@ -209,7 +213,7 @@ class DekanController extends Controller
         $nilaiHuruf = NilaiProposal::hitungNilaiHuruf($rataRata);
 
         NilaiProposal::updateOrCreate(
-            ['proposal_id' => $proposal->id],
+            ['proposal_id' => $proposal->id, 'dosen_id' => $dosenSaya->id],
             [
                 'isi_materi'        => $request->isi_materi,
                 'penyajian'         => $request->penyajian,
@@ -237,7 +241,7 @@ class DekanController extends Controller
 
         $dosenSaya = $this->getDosenSaya();
 
-        $sidangList = Sidang::with(['mahasiswa', 'pembimbing', 'nilai'])->latest()->get();
+        $sidangList = Sidang::with(['mahasiswa', 'pembimbing', 'penguji1', 'penguji2', 'nilaiPenguji'])->latest()->get();
 
         return view('dekan.nilai-sidang', compact('dekan', 'sidangList', 'dosenSaya'));
     }
@@ -267,7 +271,7 @@ class DekanController extends Controller
         $nilaiHuruf = NilaiSidang::hitungNilaiHuruf($rataRata);
 
         NilaiSidang::updateOrCreate(
-            ['sidang_id' => $sidang->id],
+            ['sidang_id' => $sidang->id, 'dosen_id' => $dosenSaya->id],
             [
                 'isi_materi'        => $request->isi_materi,
                 'penyajian'         => $request->penyajian,
@@ -419,6 +423,42 @@ class DekanController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | DOWNLOAD SK (sebagai pembimbing / pembahas)
+    |--------------------------------------------------------------------------
+    | Sama seperti halaman "Download SK" milik dosen: hanya SK yang memuat nama
+    | akun ini, dan baru bisa diunduh setelah diterbitkan dekan.
+    */
+    public function skSaya()
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $dosen   = $this->getDosenSaya();
+        $skItems = $dosen
+            ? $this->skItemsUntukDosen($dosen, 'dekan.sk-saya.pembimbing.unduh', 'dekan.sk-saya.pembahas.unduh')
+            : collect();
+
+        return view('dekan.sk-saya', [
+            'dekan'          => $dekan,
+            'skItems'          => $skItems,
+            'punyaDataDosen'   => (bool) $dosen,
+            'jumlahPembimbing' => $skItems->where('jenis', 'SK Pembimbing')->count(),
+            'jumlahPembahas'   => $skItems->where('jenis', 'SK Pembahas')->count(),
+        ]);
+    }
+
+    public function skSayaPembimbingUnduh($id)
+    {
+        return $this->unduhSkPembimbingSaya($this->getDosenSaya(), $id, 'dekan.sk-saya');
+    }
+
+    public function skSayaPembahasUnduh($id)
+    {
+        return $this->unduhSkPembahasSaya($this->getDosenSaya(), $id, 'dekan.sk-saya');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | PROFILE
     |--------------------------------------------------------------------------
     */
@@ -526,11 +566,12 @@ class DekanController extends Controller
             ->deleteFileAfterSend(true);
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | SK PEMBAHAS
-    | Terisi otomatis dari proposal yang kedua pembahasnya sudah ditetapkan kaprodi.
-    | Dekan hanya mengisi nomor SK + tanggal SK, lalu mencetak.
+    | Alur: kaprodi menetapkan dua dosen pembahas -> dekan mengisi
+    | nomor SK + tanggal SK -> SK bisa dicetak dari template Word.
     |--------------------------------------------------------------------------
     */
     public function skPembahasIndex()
@@ -541,6 +582,7 @@ class DekanController extends Controller
         $proposalList = Proposal::with(['mahasiswa.prodi', 'mahasiswa.seminarLkp', 'penguji1', 'penguji2'])
             ->whereNotNull('penguji1_id')
             ->whereNotNull('penguji2_id')
+            ->whereNotNull('sk_pembahas_diteruskan_at')   // sudah diteruskan kaprodi
             ->orderByRaw('(tanggal_sk_pembahas IS NULL) DESC')   // yang belum diberi nomor di atas
             ->latest()
             ->get();
@@ -559,14 +601,15 @@ class DekanController extends Controller
         $dekan = $this->getDekan();
         if (!$dekan) return redirect()->route('login');
 
-        $proposal = Proposal::whereNotNull('penguji1_id')->whereNotNull('penguji2_id')->findOrFail($id);
+        $proposal = Proposal::whereNotNull('penguji1_id')->whereNotNull('penguji2_id')
+            ->whereNotNull('sk_pembahas_diteruskan_at')->findOrFail($id);
 
         $request->validate([
             'nomor_sk'   => 'required|string|max:100|unique:proposals,nomor_sk_pembahas,' . $proposal->id,
             'tanggal_sk' => 'required|date',
         ], [
             'nomor_sk.required'   => 'Nomor SK wajib diisi.',
-            'nomor_sk.unique'     => 'Nomor SK tersebut sudah dipakai SK Pembahas lain.',
+            'nomor_sk.unique'     => 'Nomor SK tersebut sudah dipakai SK lain.',
             'tanggal_sk.required' => 'Tanggal SK wajib diisi.',
             'tanggal_sk.date'     => 'Tanggal SK tidak valid.',
         ]);
@@ -587,6 +630,7 @@ class DekanController extends Controller
         $proposal = Proposal::with(['mahasiswa.prodi', 'mahasiswa.seminarLkp', 'penguji1', 'penguji2'])
             ->whereNotNull('penguji1_id')
             ->whereNotNull('penguji2_id')
+            ->whereNotNull('sk_pembahas_diteruskan_at')   // sudah diteruskan kaprodi
             ->findOrFail($id);
 
         // Tanda tangan + stempel ada di template, jadi hanya dicetak setelah SK resmi terbit.
@@ -608,6 +652,95 @@ class DekanController extends Controller
 
         return response()
             ->download($file, $proposal->namaFileSkPembahas(), [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SK YUDISIUM (kolektif)
+    | Kaprodi memilih mahasiswa yang lulus sidang + mengisi IPK lalu mengajukan.
+    | Dekan hanya mengisi nomor SK dan tanggal SK; setelah itu SK terbit dan
+    | (beserta lampiran nama) bisa dilihat/diunduh kaprodi prodi bersangkutan.
+    |--------------------------------------------------------------------------
+    */
+    public function skYudisiumIndex()
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $daftar = YudisiumSk::with(['prodi', 'anggota.sidang.mahasiswa'])
+            ->withCount('anggota')
+            ->get()
+            ->sortBy(fn ($sk) => [
+                $sk->status === YudisiumSk::DIAJUKAN ? 0 : 1,
+                -1 * ($sk->diajukan_at ? $sk->diajukan_at->timestamp : 0),
+            ])
+            ->values();
+
+        $jumlahMenunggu = $daftar->where('status', YudisiumSk::DIAJUKAN)->count();
+        $jumlahTerbit   = $daftar->where('status', YudisiumSk::TERBIT)->count();
+
+        return view('dekan.sk-yudisium.index', compact('dekan', 'daftar', 'jumlahMenunggu', 'jumlahTerbit'));
+    }
+
+    public function skYudisiumSimpan(Request $request, $id)
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $sk = YudisiumSk::with('anggota.sidang')->findOrFail($id);
+
+        $request->validate([
+            'nomor_sk'   => 'required|string|max:100|unique:yudisium_sks,nomor_sk,' . $sk->id,
+            'tanggal_sk' => 'required|date',
+        ], [
+            'nomor_sk.required'   => 'Nomor SK wajib diisi.',
+            'nomor_sk.unique'     => 'Nomor SK tersebut sudah dipakai SK Yudisium lain.',
+            'tanggal_sk.required' => 'Tanggal SK wajib diisi.',
+            'tanggal_sk.date'     => 'Tanggal SK tidak valid.',
+        ]);
+
+        // Tanggal SK tidak boleh lebih awal dari tanggal sidang terakhir di daftar (bila tercatat).
+        $terakhir = $sk->anggota
+            ->map(fn ($a) => optional($a->sidang)->tanggal_sidang)
+            ->filter()
+            ->map(fn ($t) => \Carbon\Carbon::parse($t)->startOfDay())
+            ->max();
+
+        if ($terakhir && \Carbon\Carbon::parse($request->tanggal_sk)->startOfDay()->lt($terakhir)) {
+            return back()->withInput()->withErrors([
+                'tanggal_sk' => 'Tanggal SK tidak boleh lebih awal dari tanggal sidang terakhir ('
+                    . \App\Models\PengajuanSk::tanggalIndonesia($terakhir) . ').',
+            ]);
+        }
+
+        $sk->update([
+            'nomor_sk'   => trim($request->nomor_sk),
+            'tanggal_sk' => $request->tanggal_sk,
+            'status'     => YudisiumSk::TERBIT,
+        ]);
+
+        return back()->with('success', 'SK Yudisium nomor ' . $sk->nomor_sk . ' tersimpan dan sudah bisa diunduh kaprodi.');
+    }
+
+    public function skYudisiumCetak($id)
+    {
+        $dekan = $this->getDekan();
+        if (!$dekan) return redirect()->route('login');
+
+        $sk = YudisiumSk::with('prodi')->findOrFail($id);
+
+        try {
+            $file = $sk->buatFileSk();
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withErrors(['sk' => 'Gagal membuat file SK: ' . $e->getMessage()]);
+        }
+
+        return response()
+            ->download($file, $sk->namaFileSk(), [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ])
             ->deleteFileAfterSend(true);

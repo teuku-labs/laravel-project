@@ -13,6 +13,7 @@ class NilaiSidang extends Model
 
     protected $fillable = [
         'sidang_id',
+        'dosen_id',
         'isi_materi',
         'penyajian',
         'penguasaan_materi',
@@ -26,5 +27,10 @@ class NilaiSidang extends Model
     public function sidang()
     {
         return $this->belongsTo(Sidang::class, 'sidang_id');
+    }
+
+    public function dosen()
+    {
+        return $this->belongsTo(Dosen::class, 'dosen_id');
     }
 }

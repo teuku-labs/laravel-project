@@ -13,6 +13,7 @@ class NilaiProposal extends Model
 
     protected $fillable = [
         'proposal_id',
+        'dosen_id',
         'isi_materi',
         'penyajian',
         'penguasaan_materi',
@@ -26,5 +27,10 @@ class NilaiProposal extends Model
     public function proposal()
     {
         return $this->belongsTo(Proposal::class, 'proposal_id');
+    }
+
+    public function dosen()
+    {
+        return $this->belongsTo(Dosen::class, 'dosen_id');
     }
 }

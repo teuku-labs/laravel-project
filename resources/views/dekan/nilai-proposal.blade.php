@@ -103,8 +103,11 @@
                             <th rowspan="2">Nama</th>
                             <th rowspan="2">NIM</th>
                             <th colspan="4">Aspek Penilaian</th>
-                            <th rowspan="2">Rata-rata</th>
-                            <th rowspan="2">Nilai Huruf</th>
+                            <th rowspan="2">Rata-rata Anda</th>
+                            <th rowspan="2">Huruf Anda</th>
+                            <th rowspan="2">Penguji 1</th>
+                            <th rowspan="2">Penguji 2</th>
+                            <th rowspan="2">Nilai Akhir</th>
                             <th rowspan="2">Aksi</th>
                         </tr>
                         <tr>
@@ -117,7 +120,7 @@
                     <tbody>
                         @forelse($proposalList as $i => $p)
                         @php
-                            $nilai = $p->nilai;
+                            $nilai = $p->nilaiOleh($dosenSaya);
                             $berhak = $p->bolehDinilaiOleh($dosenSaya);
                             $formId = 'form-nilai-' . $p->id;
                         @endphp
@@ -132,6 +135,7 @@
                             <td><input type="number" step="0.01" min="0" max="100" name="sikap_mental" form="{{ $formId }}" class="nilai-input" value="{{ old('sikap_mental', $nilai->sikap_mental ?? '') }}" {{ $berhak ? '' : 'disabled' }} required></td>
                             <td class="rata-cell">{{ $nilai->rata_rata ?? '-' }}</td>
                             <td><span class="badge-huruf">{{ $nilai->nilai_huruf ?? '-' }}</span></td>
+                            @include('partials.nilai-akhir', ['item' => $p])
                             <td>
                                 @if($berhak)
                                     <button type="submit" form="{{ $formId }}" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
@@ -141,7 +145,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="10"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data seminar proposal.</p></div></td></tr>
+                        <tr><td colspan="13"><div class="empty-state"><i class="fas fa-inbox"></i><p>Belum ada data seminar proposal.</p></div></td></tr>
                         @endforelse
                     </tbody>
                 </table>

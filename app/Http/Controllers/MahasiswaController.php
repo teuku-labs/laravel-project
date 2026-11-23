@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Mahasiswa;
 use App\Models\Dosen;
 use App\Models\SeminarLkp;
-use App\Models\PengajuanSk;
 use App\Models\PengajuanPembimbing;
 
 class MahasiswaController extends Controller
@@ -18,7 +18,7 @@ class MahasiswaController extends Controller
         $mahasiswa = Mahasiswa::with([
             'prodi', 'pembimbing1', 'pembimbing2',
             'pembimbingLkp', 'seminarLkp.dosen', 'seminarLkp.nilai',
-            'proposal.nilai', 'sidang', 'pengajuanSk',
+            'proposal.nilaiPenguji', 'proposal.penguji1', 'proposal.penguji2', 'sidang.nilaiPenguji', 'sidang.yudisiumSk',
             'pengajuanPembimbing.dosen',
         ])->where('user_id', $user->id)->firstOrFail();
 
@@ -149,157 +149,34 @@ class MahasiswaController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Ajukan SK Pembimbing
+    | Profil & ganti password mahasiswa
     |--------------------------------------------------------------------------
     */
-    public function ajukanSk()
-    {
-        $mahasiswa = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
-
-        if (!$mahasiswa->pembimbing1_id || !$mahasiswa->pembimbing2_id) {
-            return back()->with('error', 'Kedua dosen pembimbing harus sudah menyetujui bimbingan terlebih dahulu.');
-        }
-
-        $pengajuanLama = PengajuanSk::where('mahasiswa_id', $mahasiswa->id)->first();
-
-        if ($pengajuanLama) {
-            // Hanya pengajuan yang ditolak kaprodi yang boleh diajukan ulang
-            if (!$pengajuanLama->kaprodi_rejected) {
-                return back()->with('error', 'SK Pembimbing sudah pernah diajukan.');
-            }
-
-            $pengajuanLama->update([
-                'pembimbing1_id'   => $mahasiswa->pembimbing1_id,
-                'pembimbing2_id'   => $mahasiswa->pembimbing2_id,
-                'admin_verified'   => true,
-                'kaprodi_approved' => false,
-                'kaprodi_rejected' => false,
-                'catatan_kaprodi'  => null,
-            ]);
-
-            return back()->with('success', 'Pengajuan SK Pembimbing berhasil dikirim ulang!');
-        }
-
-        PengajuanSk::create([
-            'mahasiswa_id'     => $mahasiswa->id,
-            'pembimbing1_id'   => $mahasiswa->pembimbing1_id,
-            'pembimbing2_id'   => $mahasiswa->pembimbing2_id,
-            // Tanpa verifikasi admin: langsung masuk ke kaprodi
-            'admin_verified'   => true,
-            'kaprodi_approved' => false,
-            'kaprodi_rejected' => false,
-        ]);
-
-        return back()->with('success', 'Pengajuan SK Pembimbing berhasil dikirim!');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Lihat & unduh SK Pembimbing milik sendiri
-    |--------------------------------------------------------------------------
-    */
-    public function skShow()
+    public function profile()
     {
         $user      = Auth::user();
-        $mahasiswa = Mahasiswa::with(['prodi', 'pembimbing1', 'pembimbing2', 'seminarLkp', 'proposal', 'pengajuanSk'])
+        $mahasiswa = Mahasiswa::with(['prodi', 'pembimbing1', 'pembimbing2'])
             ->where('user_id', $user->id)->firstOrFail();
 
-        $sk = $mahasiswa->pengajuanSk;
-        if (!$sk) {
-            return redirect()->route('mahasiswa.dashboard')
-                ->with('error', 'Anda belum mengajukan SK Pembimbing.');
-        }
-
-        return view('mahasiswa.sk', compact('mahasiswa', 'sk'));
+        return view('mahasiswa.profile', compact('user', 'mahasiswa'));
     }
 
-    public function skUnduh()
+    public function updatePassword(Request $request)
     {
-        $mahasiswa = Mahasiswa::where('user_id', Auth::id())->firstOrFail();
-        $sk = $mahasiswa->pengajuanSk;
+        $request->validate([
+            'current_password' => 'required',
+            'new_password'     => 'required|min:8|confirmed',
+        ], [
+            'new_password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'new_password.min'       => 'Password minimal 8 karakter.',
+        ]);
 
-        // Hanya SK milik sendiri yang sudah disetujui kaprodi dan diterbitkan dekan
-        if (!$sk || !$sk->kaprodi_approved || !$sk->sudahTerbit()) {
-            return redirect()->route('sk.show')
-                ->with('error', 'SK Pembimbing belum diterbitkan, jadi belum bisa diunduh.');
+        if (!Hash::check($request->current_password, Auth::user()->password)) {
+            return back()->withErrors(['current_password' => 'Password lama tidak sesuai.']);
         }
 
-        $kurang = $sk->kekuranganData();
-        if ($kurang) {
-            return redirect()->route('sk.show')
-                ->with('error', 'SK belum bisa diunduh, data belum lengkap: ' . implode(', ', $kurang) . '.');
-        }
+        Auth::user()->update(['password' => Hash::make($request->new_password)]);
 
-        try {
-            $file = $sk->buatFileSk();
-        } catch (\Throwable $e) {
-            report($e);
-            return redirect()->route('sk.show')->with('error', 'Gagal membuat file SK, silakan coba lagi.');
-        }
-
-        return response()
-            ->download($file, $sk->namaFileSk(), [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            ])
-            ->deleteFileAfterSend(true);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Lihat & unduh SK Pembahas milik sendiri
-    |--------------------------------------------------------------------------
-    */
-    public function skPembahasShow()
-    {
-        $mahasiswa = Mahasiswa::with(['prodi', 'seminarLkp', 'proposal.penguji1', 'proposal.penguji2'])
-            ->where('user_id', Auth::id())->firstOrFail();
-
-        $proposal = $mahasiswa->proposal;
-        if (!$proposal) {
-            return redirect()->route('mahasiswa.dashboard')
-                ->with('error', 'Anda belum mendaftar seminar proposal.');
-        }
-        if (!$proposal->penguji1_id || !$proposal->penguji2_id) {
-            return redirect()->route('mahasiswa.dashboard')
-                ->with('error', 'Dosen pembahas Anda belum ditetapkan oleh kaprodi.');
-        }
-
-        return view('mahasiswa.sk-pembahas', compact('mahasiswa', 'proposal'));
-    }
-
-    public function skPembahasUnduh()
-    {
-        $mahasiswa = Mahasiswa::with(['proposal'])->where('user_id', Auth::id())->firstOrFail();
-        $proposal  = $mahasiswa->proposal;
-
-        if (!$proposal || !$proposal->penguji1_id || !$proposal->penguji2_id) {
-            return redirect()->route('mahasiswa.dashboard')
-                ->with('error', 'Dosen pembahas Anda belum ditetapkan oleh kaprodi.');
-        }
-
-        // Hanya SK milik sendiri yang sudah diterbitkan dekan
-        if (!$proposal->sudahTerbitSkPembahas()) {
-            return redirect()->route('sk-pembahas.show')
-                ->with('error', 'SK Pembahas belum diterbitkan, jadi belum bisa diunduh.');
-        }
-
-        $kurang = $proposal->kekuranganDataSkPembahas();
-        if ($kurang) {
-            return redirect()->route('sk-pembahas.show')
-                ->with('error', 'SK belum bisa diunduh, data belum lengkap: ' . implode(', ', $kurang) . '.');
-        }
-
-        try {
-            $file = $proposal->buatFileSkPembahas();
-        } catch (\Throwable $e) {
-            report($e);
-            return redirect()->route('sk-pembahas.show')->with('error', 'Gagal membuat file SK, silakan coba lagi.');
-        }
-
-        return response()
-            ->download($file, $proposal->namaFileSkPembahas(), [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            ])
-            ->deleteFileAfterSend(true);
+        return back()->with('success', 'Password berhasil diubah.');
     }
 }

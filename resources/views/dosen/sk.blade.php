@@ -102,62 +102,25 @@
         <div class="content-area">
             <div class="page-header">
                 <h2><i class="fas fa-file-download" style="color:var(--primary-green);"></i> Surat Keputusan (SK)</h2>
-                <p>SK yang tersedia untuk didownload</p>
+                <p>SK Pembimbing dan SK Pembahas yang memuat nama Anda, tersedia setelah diterbitkan dekan</p>
             </div>
 
             <div class="stats-row">
                 <div class="stat-mini">
-                    <div class="value">{{ $skCount }}</div>
+                    <div class="value">{{ $skItems->count() }}</div>
                     <div class="label">Total SK</div>
                 </div>
                 <div class="stat-mini">
-                    <div class="value" style="color:var(--dark-green);">{{ $skDocuments->where('status','approved')->count() }}</div>
-                    <div class="label">Disetujui</div>
+                    <div class="value" style="color:var(--dark-green);">{{ $jumlahPembimbing }}</div>
+                    <div class="label">SK Pembimbing</div>
                 </div>
                 <div class="stat-mini">
-                    <div class="value" style="color:#f39c12;">{{ $pendingApproval }}</div>
-                    <div class="label">Pending</div>
+                    <div class="value" style="color:#3498db;">{{ $jumlahPembahas }}</div>
+                    <div class="label">SK Pembahas</div>
                 </div>
             </div>
 
-            <div class="documents-grid">
-                @forelse($skDocuments as $sk)
-                    <div class="document-card">
-                        <div class="document-icon"><i class="fas fa-file-pdf"></i></div>
-                        <div class="document-title">{{ $sk->jenis ?? 'SK Pembimbing' }}</div>
-                        <div class="document-info">
-                            <p><i class="fas fa-hashtag"></i> {{ $sk->nomor_sk ?? 'Belum ada nomor' }}</p>
-                            <p><i class="fas fa-calendar"></i> {{ \Carbon\Carbon::parse($sk->created_at)->format('d M Y') }}</p>
-                            <p><i class="fas fa-check-circle"></i>
-                                @if($sk->status == 'approved')
-                                    <span style="color:var(--dark-green);">Disetujui</span>
-                                @elseif($sk->status == 'pending')
-                                    <span style="color:#f39c12;">Menunggu Persetujuan</span>
-                                @else
-                                    <span style="color:#e74c3c;">Ditolak</span>
-                                @endif
-                            </p>
-                        </div>
-                        @if(isset($sk->file_path) && $sk->file_path && $sk->status == 'approved')
-                            <a href="{{ asset('storage/' . $sk->file_path) }}" class="btn-download" download>
-                                <i class="fas fa-download"></i> Download SK
-                            </a>
-                        @else
-                            <button class="btn-download disabled" disabled>
-                                <i class="fas fa-lock"></i> Belum Tersedia
-                            </button>
-                        @endif
-                    </div>
-                @empty
-                    <div style="grid-column:1/-1;">
-                        <div class="empty-state">
-                            <i class="fas fa-folder-open"></i>
-                            <h5>Belum Ada SK</h5>
-                            <p>SK akan muncul di sini setelah disetujui oleh Kaprodi/Dekan.</p>
-                        </div>
-                    </div>
-                @endforelse
-            </div>
+            @include('dosen.partials.sk-cards', ['skItems' => $skItems])
         </div>
     </div>
 

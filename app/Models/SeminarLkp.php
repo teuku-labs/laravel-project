@@ -44,13 +44,13 @@ class SeminarLkp extends Model
     }
 
     /**
-     * Seminar LKP dinyatakan lulus jika nilainya sudah diinput dan bukan E
-     * (rata-rata >= 50, sesuai konversi di HitungNilaiTrait).
+     * Seminar LKP dinyatakan lulus jika nilainya sudah diinput dan minimal C
+     * (rata-rata >= NilaiSeminarLkp::batasLulus(), lihat HitungNilaiTrait).
      */
     public function lulus(): bool
     {
         $nilai = $this->nilai;
 
-        return $nilai !== null && (float) $nilai->rata_rata >= 50;
+        return $nilai !== null && (float) $nilai->rata_rata >= NilaiSeminarLkp::batasLulus();
     }
 }

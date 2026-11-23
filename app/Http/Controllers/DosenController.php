@@ -8,6 +8,7 @@ use App\Models\Dosen;
 use App\Models\Mahasiswa;
 use App\Models\Jadwal;
 use App\Models\Sk;
+use App\Models\PengajuanSk;
 use App\Models\PengajuanPembimbing;
 use App\Models\SeminarLkp;
 use App\Models\Proposal;
@@ -42,9 +43,9 @@ class DosenController extends Controller
         $jadwals        = Jadwal::where('dosen_id', $dosen->id)->get();
         $upcomingJadwal = $jadwals->where('tanggal', '>=', now())->count();
 
-        $skDocuments    = $dosen->sk;
-        $skCount        = $skDocuments->count();
-        $pendingApproval = $skDocuments->where('status', 'pending')->count();
+        // SK yang sudah terbit dan memuat dosen ini (Pembimbing + Pembahas)
+        $skItems        = $this->skItemsUntuk($dosen);
+        $skCount        = $skItems->count();
 
         // ✅ Pengajuan bimbingan yang belum direspons
         $pengajuanBaru  = PengajuanPembimbing::where('dosen_id', $dosen->id)
@@ -54,8 +55,8 @@ class DosenController extends Controller
 
         return view('dosen.dashboard', compact(
             'dosen', 'mahasiswaCount', 'jadwals',
-            'upcomingJadwal', 'skDocuments', 'skCount',
-            'pendingApproval', 'pengajuanBaru'
+            'upcomingJadwal', 'skItems', 'skCount',
+            'pengajuanBaru'
         ));
     }
 
@@ -215,7 +216,7 @@ class DosenController extends Controller
                 $q->where('penguji1_id', $dosen->id)
                   ->orWhere('penguji2_id', $dosen->id);
             })
-            ->with(['mahasiswa', 'pembimbing1', 'nilai'])
+            ->with(['mahasiswa', 'pembimbing1', 'penguji1', 'penguji2', 'nilaiPenguji'])
             ->latest()->get();
 
         return view('dosen.proposal', compact('dosen', 'proposalList'));
@@ -242,7 +243,7 @@ class DosenController extends Controller
         $nilaiHuruf = NilaiProposal::hitungNilaiHuruf($rataRata);
 
         NilaiProposal::updateOrCreate(
-            ['proposal_id' => $proposal->id],
+            ['proposal_id' => $proposal->id, 'dosen_id' => $dosen->id],
             [
                 'isi_materi'        => $request->isi_materi,
                 'penyajian'         => $request->penyajian,
@@ -273,7 +274,7 @@ class DosenController extends Controller
                 $q->where('penguji1_id', $dosen->id)
                   ->orWhere('penguji2_id', $dosen->id);
             })
-            ->with(['mahasiswa', 'pembimbing', 'nilai'])
+            ->with(['mahasiswa', 'pembimbing', 'penguji1', 'penguji2', 'nilaiPenguji'])
             ->latest()->get();
 
         return view('dosen.sidang', compact('dosen', 'sidangList'));
@@ -300,7 +301,7 @@ class DosenController extends Controller
         $nilaiHuruf = NilaiSidang::hitungNilaiHuruf($rataRata);
 
         NilaiSidang::updateOrCreate(
-            ['sidang_id' => $sidang->id],
+            ['sidang_id' => $sidang->id, 'dosen_id' => $dosen->id],
             [
                 'isi_materi'        => $request->isi_materi,
                 'penyajian'         => $request->penyajian,
@@ -382,25 +383,130 @@ class DosenController extends Controller
     | SK PEMBIMBING
     |--------------------------------------------------------------------------
     */
+    /**
+     * Kumpulan SK (Pembimbing + Pembahas) yang memuat dosen ini dan sudah
+     * diterbitkan dekan. Hanya dosen bersangkutan yang melihatnya; mahasiswa tidak.
+     */
+    private function skItemsUntuk(Dosen $dosen)
+    {
+        // SK Pembimbing: dosen ini tercantum sebagai pembimbing 1/2, sudah diteruskan kaprodi, dan SK sudah terbit
+        $skPembimbing = PengajuanSk::with('mahasiswa')
+            ->where('kaprodi_approved', true)
+            ->where(fn ($q) => $q->where('pembimbing1_id', $dosen->id)->orWhere('pembimbing2_id', $dosen->id))
+            ->get()
+            ->filter(fn ($p) => $p->sudahTerbit())
+            ->map(fn ($p) => (object) [
+                'jenis'    => 'SK Pembimbing',
+                'mahasiswa'=> optional($p->mahasiswa)->nama ?? '-',
+                'nim'      => optional($p->mahasiswa)->nim ?? '-',
+                'peran'    => $p->pembimbing1_id == $dosen->id ? 'Pembimbing Utama' : 'Pembimbing Pendamping',
+                'nomor_sk' => $p->nomor_sk,
+                'tanggal'  => $p->tanggal_sk,
+                'url'      => route('dosen.sk.pembimbing.unduh', $p->id),
+            ]);
+
+        // SK Pembahas: dosen ini tercantum sebagai pembahas 1/2, sudah diteruskan kaprodi, dan SK sudah terbit
+        $skPembahas = Proposal::with('mahasiswa')
+            ->whereNotNull('sk_pembahas_diteruskan_at')
+            ->where(fn ($q) => $q->where('penguji1_id', $dosen->id)->orWhere('penguji2_id', $dosen->id))
+            ->get()
+            ->filter(fn ($p) => $p->sudahTerbitSkPembahas())
+            ->map(fn ($p) => (object) [
+                'jenis'    => 'SK Pembahas',
+                'mahasiswa'=> optional($p->mahasiswa)->nama ?? '-',
+                'nim'      => optional($p->mahasiswa)->nim ?? '-',
+                'peran'    => $p->penguji1_id == $dosen->id ? 'Pembahas I' : 'Pembahas II',
+                'nomor_sk' => $p->nomor_sk_pembahas,
+                'tanggal'  => $p->tanggal_sk_pembahas,
+                'url'      => route('dosen.sk.pembahas.unduh', $p->id),
+            ]);
+
+        return $skPembimbing->concat($skPembahas)
+            ->sortByDesc(fn ($x) => $x->tanggal)->values();
+    }
+
     public function sk()
     {
         $dosen = $this->getDosen();
         if (!$dosen) return redirect()->route('login');
 
-        $skDocuments    = $dosen->sk;
-        $skCount        = $skDocuments->count();
-        $pendingApproval = $skDocuments->where('status', 'pending')->count();
+        $skItems = $this->skItemsUntuk($dosen);
+
         $mahasiswaCount = Mahasiswa::where('pembimbing1_id', $dosen->id)
                             ->orWhere('pembimbing2_id', $dosen->id)->count();
         $upcomingJadwal = Jadwal::where('dosen_id', $dosen->id)
                             ->where('tanggal', '>=', now())->count();
-        $pengajuanBaru  = PengajuanPembimbing::where('dosen_id', $dosen->id)
-                            ->where('status', 'pending')->count();
 
-        return view('dosen.sk', compact(
-            'dosen', 'skDocuments', 'skCount', 'pendingApproval',
-            'mahasiswaCount', 'upcomingJadwal', 'pengajuanBaru'
-        ));
+        return view('dosen.sk', [
+            'dosen'            => $dosen,
+            'skItems'          => $skItems,
+            'jumlahPembimbing' => $skItems->where('jenis', 'SK Pembimbing')->count(),
+            'jumlahPembahas'   => $skItems->where('jenis', 'SK Pembahas')->count(),
+            'mahasiswaCount'   => $mahasiswaCount,
+            'upcomingJadwal'   => $upcomingJadwal,
+        ]);
+    }
+
+    /** Unduh SK Pembimbing milik dosen ini (dosen lain tidak bisa mengakses). */
+    public function skPembimbingUnduh($id)
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $sk = PengajuanSk::where('kaprodi_approved', true)
+            ->where(fn ($q) => $q->where('pembimbing1_id', $dosen->id)->orWhere('pembimbing2_id', $dosen->id))
+            ->findOrFail($id);
+
+        if (!$sk->sudahTerbit()) {
+            return redirect()->route('dosen.sk')->with('error', 'SK belum diterbitkan oleh dekan.');
+        }
+
+        $kurang = $sk->kekuranganData();
+        if ($kurang) {
+            return redirect()->route('dosen.sk')->with('error', 'SK belum bisa diunduh, data belum lengkap: ' . implode(', ', $kurang) . '.');
+        }
+
+        try {
+            $file = $sk->buatFileSk();
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect()->route('dosen.sk')->with('error', 'Gagal membuat file SK, silakan coba lagi.');
+        }
+
+        return response()->download($file, $sk->namaFileSk(), [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /** Unduh SK Pembahas milik dosen ini (dosen lain tidak bisa mengakses). */
+    public function skPembahasUnduh($id)
+    {
+        $dosen = $this->getDosen();
+        if (!$dosen) return redirect()->route('login');
+
+        $proposal = Proposal::whereNotNull('sk_pembahas_diteruskan_at')
+            ->where(fn ($q) => $q->where('penguji1_id', $dosen->id)->orWhere('penguji2_id', $dosen->id))
+            ->findOrFail($id);
+
+        if (!$proposal->sudahTerbitSkPembahas()) {
+            return redirect()->route('dosen.sk')->with('error', 'SK belum diterbitkan oleh dekan.');
+        }
+
+        $kurang = $proposal->kekuranganDataSkPembahas();
+        if ($kurang) {
+            return redirect()->route('dosen.sk')->with('error', 'SK belum bisa diunduh, data belum lengkap: ' . implode(', ', $kurang) . '.');
+        }
+
+        try {
+            $file = $proposal->buatFileSkPembahas();
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect()->route('dosen.sk')->with('error', 'Gagal membuat file SK, silakan coba lagi.');
+        }
+
+        return response()->download($file, $proposal->namaFileSkPembahas(), [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
     }
 
     /*

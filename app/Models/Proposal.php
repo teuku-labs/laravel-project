@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
-use App\Support\SkDocx;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\MemilikiNilaiPenguji;
+use App\Support\SkDocx;
 
 class Proposal extends Model
 {
+    use MemilikiNilaiPenguji;
+
     protected $table = 'proposals';
 
     protected $fillable = [
@@ -20,11 +23,13 @@ class Proposal extends Model
         'admin_verified',
         'nomor_sk_pembahas',
         'tanggal_sk_pembahas',
+        'sk_pembahas_diteruskan_at',
     ];
 
     protected $casts = [
         'admin_verified' => 'boolean',
-        'tanggal_sk_pembahas' => 'date:Y-m-d',
+        'tanggal_sk_pembahas' => 'date',
+        'sk_pembahas_diteruskan_at' => 'datetime',
     ];
 
     public function mahasiswa()
@@ -47,9 +52,10 @@ class Proposal extends Model
         return $this->belongsTo(Dosen::class, 'penguji2_id');
     }
 
-    public function nilai()
+    /** Satu baris nilai per dosen penguji. */
+    public function nilaiPenguji()
     {
-        return $this->hasOne(NilaiProposal::class, 'proposal_id');
+        return $this->hasMany(NilaiProposal::class, 'proposal_id');
     }
 
     /**
@@ -68,40 +74,31 @@ class Proposal extends Model
         ]));
     }
 
-    /**
-     * Seminar Proposal dinyatakan lulus jika nilainya sudah diinput dan bukan E
-     * (rata-rata >= 50, sama dengan aturan SeminarLkp::lulus()).
-     */
-    public function lulus(): bool
-    {
-        $nilai = $this->nilai;
-
-        return $nilai !== null && (float) $nilai->rata_rata >= 50;
-    }
-
     /*
     |--------------------------------------------------------------------------
-    | SK Pembahas (diterbitkan dekan setelah kaprodi menetapkan 2 pembahas)
+    | SK Pembahas (dekan mengisi nomor + tanggal SK setelah kaprodi
+    | menetapkan dua dosen pembahas, lalu SK dicetak dari template Word)
     |--------------------------------------------------------------------------
     */
 
-    /** SK Pembahas dianggap terbit setelah dekan mengisi nomor dan tanggal SK. */
     public function sudahTerbitSkPembahas(): bool
     {
-        return filled($this->nomor_sk_pembahas) && $this->tanggal_sk_pembahas !== null;
+        return filled($this->nomor_sk_pembahas) && !empty($this->tanggal_sk_pembahas);
     }
 
+    /** TA Semester dari tanggal SK (atau tanggal pendaftaran proposal bila SK belum terbit). */
     public function taSemester(): string
     {
         return PengajuanSk::hitungTaSemester($this->tanggal_sk_pembahas ?? $this->created_at ?? now());
     }
 
+    /** Tempat/tanggal lahir dari data pendaftaran LKP, mis. "Bireuen, 15 Desember 2000". */
     public function tempatTanggalLahir(): ?string
     {
         return PengajuanSk::formatTtlDariLkp(optional($this->mahasiswa)->seminarLkp);
     }
 
-    /** Data yang masih kurang sehingga SK Pembahas belum bisa dicetak (kosong = lengkap). */
+    /** Daftar data yang masih kurang sehingga SK belum bisa dicetak/diunduh (kosong = lengkap). */
     public function kekuranganDataSkPembahas(): array
     {
         $this->loadMissing(['mahasiswa.prodi', 'mahasiswa.seminarLkp', 'penguji1', 'penguji2']);

@@ -1,8 +1,10 @@
 <?php
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\MemilikiNilaiPenguji;
 class Sidang extends Model
 {
+    use MemilikiNilaiPenguji;
     protected $table = 'sidangs';
     protected $fillable = [
         'mahasiswa_id',
@@ -18,6 +20,7 @@ class Sidang extends Model
         'kaprodi_approved',
         'kaprodi_rejected',
         'catatan_kaprodi',
+        'yudisium_sk_id',
     ];
     public function mahasiswa()
     {
@@ -38,9 +41,16 @@ class Sidang extends Model
         return $this->belongsTo(Dosen::class, 'penguji2_id');
     }
 
-    public function nilai()
+    /** SK Yudisium (kolektif) yang memuat mahasiswa ini; null bila belum diterbitkan. */
+    public function yudisiumSk()
     {
-        return $this->hasOne(NilaiSidang::class, 'sidang_id');
+        return $this->belongsTo(YudisiumSk::class, 'yudisium_sk_id');
+    }
+
+    /** Satu baris nilai per dosen penguji. */
+    public function nilaiPenguji()
+    {
+        return $this->hasMany(NilaiSidang::class, 'sidang_id');
     }
 
     /**

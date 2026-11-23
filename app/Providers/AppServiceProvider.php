@@ -9,6 +9,11 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\Dosen;
 use App\Models\Mahasiswa;
 use App\Models\Jadwal;
+use App\Models\Kaprodi;
+use App\Models\SeminarLkp;
+use App\Models\Proposal;
+use App\Models\Sidang;
+use App\Models\PengajuanPembimbing;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,6 +62,41 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('upcomingJadwal', Jadwal::where('dosen_id', $dosen->id)
                 ->where('tanggal', '>=', now())->count());
+        });
+
+        // Sidebar kaprodi: identitas + angka badge "perlu tindakan".
+        // Dipasang hanya pada partial sidebar (bukan 'kaprodi.*') supaya query
+        // berjalan sekali per halaman, bukan sekali untuk halaman dan sekali
+        // lagi untuk partial. Definisi angka sama dengan yang dipakai di
+        // dashboard & halaman daftar masing-masing, jadi tidak saling bertentangan.
+        View::composer('kaprodi.partials.sidebar', function ($view) {
+            if (! Auth::check()) return;
+
+            $kaprodi = Kaprodi::with('prodi')->where('user_id', Auth::id())->first();
+            if (! $kaprodi) return;
+
+            $prodiId = $kaprodi->prodi_id;
+            $dosenId = (int) (Dosen::where('user_id', Auth::id())->value('id') ?? 0);
+            $dariProdi = fn ($q) => $q->where('prodi_id', $prodiId);
+
+            $view->with('sbKaprodi', [
+                'nama'  => $kaprodi->nama,
+                'prodi' => optional($kaprodi->prodi)->nama_prodi,
+            ]);
+
+            $view->with('sbBadge', [
+                // belum dijadwalkan
+                'seminar'   => SeminarLkp::whereHas('mahasiswa', $dariProdi)->whereNull('tanggal_seminar')->count(),
+                'proposal'  => Proposal::whereHas('mahasiswa', $dariProdi)->whereNull('tanggal_seminar')->count(),
+                // menunggu keputusan kaprodi (belum disetujui & belum ditolak)
+                'sidang'    => Sidang::whereHas('mahasiswa', $dariProdi)
+                                ->where('kaprodi_approved', false)
+                                ->where('kaprodi_rejected', false)->count(),
+                // pengajuan bimbingan yang masih pending untuk kaprodi sebagai dosen
+                'bimbingan' => $dosenId
+                                ? PengajuanPembimbing::where('dosen_id', $dosenId)->where('status', 'pending')->count()
+                                : 0,
+            ]);
         });
     }
 }
